@@ -12,6 +12,7 @@ interface TestFunction {
 }
 
 type BasicFunction = () => string;
+type BasicFunctionWithOptionalString = (optionalArg?: string) => string;
 
 const MOCK_RETURN_VAL = "mockReturnVal";
 
@@ -51,6 +52,46 @@ describe("Interface test cases", () => {
 
             verify(mockedTestInterface);
         });
+
+        it("should match args correctly with provided optional args", () => {
+            const mockedFunction = mock<BasicFunctionWithOptionalString>();
+
+            expect(mockedFunction).withArgs("arg").andReturn(MOCK_RETURN_VAL);
+            expect(mockedFunction).withArgs().andReturn(MOCK_RETURN_VAL + 1);
+            
+            assert.equal(MOCK_RETURN_VAL, mockedFunction("arg"));
+
+            verify(mockedFunction);
+        });
+
+        it("should match args correctly with unspecified optional args", () => {
+            const mockedFunction = mock<BasicFunctionWithOptionalString>();
+
+            expect(mockedFunction).withArgs("arg").andReturn(MOCK_RETURN_VAL);
+            expect(mockedFunction).withArgs().andReturn(MOCK_RETURN_VAL + 1);
+            
+            assert.equal(MOCK_RETURN_VAL + 1, mockedFunction());
+
+            verify(mockedFunction);
+        });
+
+        it("should throw if no args match with optional args", () => {
+            const mockedFunction = mock<BasicFunctionWithOptionalString>();
+
+            expect(mockedFunction).withArgs("arg").andReturn(MOCK_RETURN_VAL);
+            expect(mockedFunction).withArgs().andReturn(MOCK_RETURN_VAL + 1);
+            
+            let didThrow = false;
+            try {
+                mockedFunction("noMatch");
+            } catch (e) {
+                didThrow = true;
+                assert.equal(0, e.message.indexOf("func(noMatch) was called but no expectation matched."))
+            }
+
+            assert.equal(true, didThrow);
+        });
+        
     });
 
 });

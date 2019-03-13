@@ -3,6 +3,7 @@
         "module": "commonjs",
         "noImplicitAny": true,
         "noImplicitReturns": true,
+        "strict": true,
         "noImplicitThis": true,
         "strictNullChecks": true,
         "strictFunctionTypes": true,

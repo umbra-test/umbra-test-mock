@@ -24,7 +24,9 @@
                 "--timeout",
                 "999999",
                 "--colors",
-                "${workspaceFolder}/build/tst"
+                "--require",
+                "source-map-support/register",
+                "${workspaceFolder}/build/tst",
             ],
             "internalConsoleOptions": "openOnSessionStart"
         }

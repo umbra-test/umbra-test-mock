@@ -2,8 +2,6 @@ import { CreateInternalMocker, INTERNAL_MOCKER_NAME } from "./InternalMocker";
 import { createMockedFunction } from "./MockedFunction";
 import { OngoingStubbing, OnGoingStubs } from "./OnGoingStubs";
 
-// type Parameters<T extends (...args: any[]) => any> = T extends (...args: infer P) => any ? P : never;
-
 type Answer<F extends MockableFunction> = (...args: Parameters<F>) => ReturnType<F>;
 type MockableFunction = (...args: any[]) => any;
 
@@ -34,7 +32,7 @@ class InvocationHandler<T extends object> implements ProxyHandler<T> {
 
     public apply(target: T, thisArg: any, argArray?: any): any {
         if (target === this.realObject) {
-            return this.cachedFunctionStub(argArray);
+            return this.cachedFunctionStub(...argArray);
         }
 
         (target as any)(argArray);
@@ -77,8 +75,7 @@ class InvocationHandler<T extends object> implements ProxyHandler<T> {
     }
 
     public enumerate(target: T): PropertyKey[] {
-        console.log("enumerate");
-        return Object.keys(this.cachedStubs);
+        return this.ownKeys(target);
     }
 
     public ownKeys(target: T): PropertyKey[] {
@@ -103,7 +100,7 @@ class InvocationHandler<T extends object> implements ProxyHandler<T> {
         preventExtensions(target: T): boolean {
             console.log("blah");
         }
-        
+
         has?(target: T, p: PropertyKey): boolean {
             console.log("blah");
         }

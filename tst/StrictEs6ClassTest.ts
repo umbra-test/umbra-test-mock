@@ -54,7 +54,7 @@ describe("ES6 class strict test cases", () => {
                 mockedTestInterface.method1StringArgNumberReturn(CALL_PARAM_1);
             } catch (e) {
                 didThrow = true;
-                assert.equal(e.message, "method1StringArgNumberReturn(callParam1) was called but no expectation matched. Expectations:\nmethod1StringArgNumberReturn(randoString)\nmethod1StringArgNumberReturn(callPraam1)\n")
+                assert.match(e.message, /method1StringArgNumberReturn\(callParam1\) was called but no expectation matched. Expectations:\nmethod1StringArgNumberReturn\(randoString\) at .*?StrictEs6ClassTest\.ts:49:94\nmethod1StringArgNumberReturn\(callPraam1\) at .*?StrictEs6ClassTest\.ts:50:93\n/);
             }
 
             assert.equal(didThrow, true);
@@ -70,11 +70,11 @@ describe("ES6 class strict test cases", () => {
                 verify(mockedTestInterface);
             } catch (e) {
                 didThrow = true;
-                assert.equal(e.message, "Expected 1 invocations, got 0");
+                assert.match(e.message, /Expected 1 invocations, got 0\.\nExpected at: .*?StrictEs6ClassTest\.ts:66:13/);
             }
 
             assert.equal(didThrow, true);
-        });
+        });        
 
         it("should return mocked value", () => {
             const mockedTestInterface = mock(TestClass);
@@ -84,6 +84,36 @@ describe("ES6 class strict test cases", () => {
             assert.equal(mockedTestInterface.method1StringArgNumberReturn(CALL_PARAM_1), MOCK_RETURN_VALUE);
 
             verify(mockedTestInterface);
+        });
+
+        it("should return mocked value twice", () => {
+            const mockedTestInterface = mock(TestClass);
+
+            expect(mockedTestInterface.method1StringArgNumberReturn).andReturn(MOCK_RETURN_VALUE).times(2);
+            
+            assert.equal(mockedTestInterface.method1StringArgNumberReturn(CALL_PARAM_1), MOCK_RETURN_VALUE);
+            assert.equal(mockedTestInterface.method1StringArgNumberReturn(CALL_PARAM_1), MOCK_RETURN_VALUE);
+
+            verify(mockedTestInterface);
+        });
+
+        it("should throw if mocked value is not called three times when expected", () => {
+            const mockedTestInterface = mock(TestClass);
+
+            expect(mockedTestInterface.method1StringArgNumberReturn).andReturn(MOCK_RETURN_VALUE).times(3);
+            
+            assert.equal(mockedTestInterface.method1StringArgNumberReturn(CALL_PARAM_1), MOCK_RETURN_VALUE);
+            assert.equal(mockedTestInterface.method1StringArgNumberReturn(CALL_PARAM_1), MOCK_RETURN_VALUE);
+
+            let didThrow = false;
+            try {
+                verify(mockedTestInterface);
+            } catch (e) {
+                didThrow = true;
+                assert.match(e.message, /Expected 3 invocations, got 2.\nExpected at: .*?StrictEs6ClassTest\.ts:103:99\nCalled at:\n.*?StrictEs6ClassTest\.ts:105:46\n.*?StrictEs6ClassTest\.ts:106:46\n/);
+            }
+
+            assert.equal(didThrow, true);
         });
 
         it("should work correctly when class is not provided", () => {
@@ -102,7 +132,7 @@ describe("ES6 class strict test cases", () => {
 
             expect(mockedTestInterface.method1StringArgNumberReturn).andReturn(MOCK_RETURN_VALUE);
             
-            let didThrow: boolean = false;
+            let didThrow = false;
             try {
                 mockedTestInterface.invalidMethod(CALL_PARAM_1);
             } catch (e) {
@@ -123,7 +153,7 @@ describe("ES6 class strict test cases", () => {
             const mockedTestInterface: any = mock(TestClass);
 
             
-            let didThrow: boolean = false;
+            let didThrow = false;
             try {
                 expect(mockedTestInterface.invalidMethod).andReturn(MOCK_RETURN_VALUE);
             } catch (e) {

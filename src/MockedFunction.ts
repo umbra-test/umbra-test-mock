@@ -1,6 +1,7 @@
 import { ArgumentValidator } from "./ArgumentValidator";
-import { GetInternalMocker } from "./InternalMocker";
+import { GetInternalMocker, StubData } from "./InternalMocker";
 import { Answer, MockableFunction, StrictnessMode } from "./Mock";
+import { StacktraceUtils } from "./StackTraceParser";
 
 type ArgumentMatcher = ArgumentValidator<any>[] | null;
 function findBestArgumentMatcher(stubs: ArgumentMatcher[], args: any[]): ArgumentMatcher {
@@ -29,6 +30,9 @@ function findBestArgumentMatcher(stubs: ArgumentMatcher[], args: any[]): Argumen
         }
 
         let isValid = true;
+        if (key.length === 0) {
+            isValid = args.length === 0;
+        }
         for (let i = 0; i < key.length; i++) {
             const argumentValidator = key[i];
             const arg = args[i];
@@ -46,21 +50,24 @@ function findBestArgumentMatcher(stubs: ArgumentMatcher[], args: any[]): Argumen
 function createMockedFunction<F extends MockableFunction>(): F {
     const func = (...args: Parameters<F>): ReturnType<F> | null => {
         const internalMocker = GetInternalMocker(mockedFunc);
-        internalMocker.recordedInvocations.push(args);
+        internalMocker.recordedInvocations.push({
+            params: args,
+            location: StacktraceUtils.getCurrentMockLocation(2)
+        });
 
         const stubs: (ArgumentValidator<any>[] | null)[] = Array.from(internalMocker.stubs.keys());
         const bestArgs: ArgumentValidator<any>[] | null = findBestArgumentMatcher(stubs, args);
-        const answers: Answer<F>[] | undefined = internalMocker.stubs.get(bestArgs);
-        if (answers !== undefined && answers.length > 0) {
-            const nextAnswer = answers.pop();
+        const stubData: StubData<F> | undefined = internalMocker.stubs.get(bestArgs);
+        if (stubData !== undefined && stubData.answers.length > 0) {
+            const nextAnswer = stubData.answers.pop();
             if (nextAnswer === undefined) {
                 throw new Error("Missing next answer");
             }
 
             const result = nextAnswer(...args);
-            if (answers.length === 0) {
+            if (stubData.answers.length === 0) {
                 // If this was the last answer, push it back on
-                answers.push(nextAnswer);
+                stubData.answers.push(nextAnswer);
             }
 
             return result;
@@ -72,23 +79,28 @@ function createMockedFunction<F extends MockableFunction>(): F {
             }
 
             let expectations = "";
-            for (const stub of stubs) {
-                if (stub === null) {
+            for (const argumentValidator of stubs) {
+                if (argumentValidator === null) {
                     expectations += `${mockedFunc.name} no specific arguments specified`;
                 } else {
                     let argData = "";
-                    for (const stubArg of stub) {
-                        if (stubArg.description) {
-                            argData += stubArg.description();
+                    for (const argumentValdiatorArg of argumentValidator) {
+                        if (argumentValdiatorArg.description) {
+                            argData += argumentValdiatorArg.description();
                         } else {
-                            argData += stubArg.toString();
+                            argData += argumentValdiatorArg.toString();
                         }
                     }
-                    expectations += `${mockedFunc.name}(${argData})\n`;
+                    const expectationStubData = internalMocker.stubs.get(argumentValidator);
+                    const location = expectationStubData !== undefined ? expectationStubData.location : "unknown";
+                    expectations += `${mockedFunc.name}(${argData}) at ${location}\n`;
                 }
             }
+            // Unicode space is to trick reporter to have a blank line which seems to call trim()
             throw new Error(`${mockedFunc.name}(${args}) was called but no expectation matched. Expectations:
-${expectations}`);
+${expectations}
+\u00A0`);
+
         }
 
         return null;
@@ -98,8 +110,4 @@ ${expectations}`);
     return mockedFunc;
 }
 
-export {
-    createMockedFunction,
-    findBestArgumentMatcher,
-    ArgumentMatcher,
-};
+export { createMockedFunction, findBestArgumentMatcher, ArgumentMatcher, };
