@@ -5,6 +5,8 @@ import { Answer, MockableFunction } from "./Mock";
 import { ArgumentMatcher } from "./MockedFunction";
 import { StacktraceUtils } from "./StackTraceParser";
 
+type UnwrapPromise<T extends Promise<any>> = T extends Promise<infer P> ? P : never;
+
 interface OngoingStubbing<F extends MockableFunction> {
 
     inOrder(): OngoingStubbing<F>;
@@ -14,6 +16,10 @@ interface OngoingStubbing<F extends MockableFunction> {
     andReturn(...values: ReturnType<F>[]): OngoingStubbing<F>;
 
     andThrow(...error: Error[]): OngoingStubbing<F>;
+
+    andResolve(...values: UnwrapPromise<ReturnType<F>>[]): OngoingStubbing<F>;
+
+    andReject(...values: Error[]): OngoingStubbing<F>;
 
     andCallRealMethod(): OngoingStubbing<F>;
 
@@ -46,6 +52,22 @@ function createDirectThrowAnswer<F extends MockableFunction>(error: Error): Answ
 function createCallRealMethodAnwser<F extends MockableFunction>(realFunction: F): Answer<F> {
     return function realMethodAnswer(...args: Parameters<F>) {
         return realFunction(args);
+    };
+}
+
+function createPromiseResolveAnswer<F extends MockableFunction>(value: UnwrapPromise<ReturnType<F>>): Answer<F> {
+    return function directReturnAnswer(): ReturnType<F> {
+        // Casting because I can't get the unwrapping and rewrapping of promises to correctly type. The public interface
+        // typing is correct and will error if any non promise return types try to use .andResolve
+        return Promise.resolve(value) as ReturnType<F>;
+    };
+}
+
+function createPromiseRejectAnswer<F extends MockableFunction>(error: Error): Answer<F> {
+    return function directReturnAnswer(): ReturnType<F> {
+        // Casting because I can't get the unwrapping and rewrapping of promises to correctly type. The public interface
+        // typing is correct and will error if any non promise return types try to use .andReject
+        return Promise.reject(error) as ReturnType<F>;
     };
 }
 
@@ -123,6 +145,20 @@ class OnGoingStubs<F extends MockableFunction> implements OngoingStubbing<F> {
     public andAnswer(...answers: Answer<ReturnType<F>>[]): OngoingStubbing<F> {
         for (const answer of answers) {
             this.setAnswerForAguments(answer);
+        }
+        return this;
+    }
+
+    public andResolve(...values: UnwrapPromise<ReturnType<F>>[]): OngoingStubbing<F> {
+        for (const value of values) {
+            this.setAnswerForAguments(createPromiseResolveAnswer(value));
+        }
+        return this;
+    }
+
+    public andReject(...errors: Error[]): OngoingStubbing<F> {
+        for (const error of errors) {
+            this.setAnswerForAguments(createPromiseRejectAnswer(error));
         }
         return this;
     }
