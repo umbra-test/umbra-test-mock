@@ -1,27 +1,23 @@
-import { ArgumentValidator } from "./ArgumentValidator";
 import { Answer, MockableFunction, MockOptions } from "./Mock";
+import { ArgumentMatcher } from "./MockedFunction";
 import { Verifier } from "./Verify";
 
-interface StubData<F extends MockableFunction> {
-    answers: Answer<F>[];
-    location: string | null;
-}
-
-interface ExpectationData {
+interface ExpectationData<F extends MockableFunction> {
     verifier: Verifier<any>;
     location: string | null;
+    expectedArgs: ArgumentMatcher;
+    answer: Answer<F> | null;
+    callCount: number;
 }
 
 interface RecordedInvocation<F extends MockableFunction> {
-    params: Parameters<F>;
-    location: string | null;
+    readonly params: Parameters<F>;
+    readonly location: string | null;
 }
 
 interface InternalMocker<F extends MockableFunction> {
 
-    readonly stubs: Map<ArgumentValidator<any>[] | null, StubData<F>>;
-
-    readonly expectations: ExpectationData[];
+    readonly expectations: ExpectationData<F>[];
 
     readonly recordedInvocations: RecordedInvocation<F>[];
 
@@ -44,7 +40,6 @@ function GetInternalMocker<F extends MockableFunction>(mock: F): InternalMocker<
 
 function CreateInternalMocker<F extends MockableFunction>(mockedFunction: F, realFunction: F, options: MockOptions) {
     const internalMocker: InternalMocker<F> = {
-        stubs: new Map(),
         expectations: [],
         recordedInvocations: [],
         realFunction: realFunction,
@@ -63,5 +58,4 @@ export {
     InternalMocker,
     INTERNAL_MOCKER_NAME,
     RecordedInvocation,
-    StubData,
 };

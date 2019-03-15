@@ -58,7 +58,7 @@ describe("Interface test cases", () => {
             const mockedFunction = mock<TestFunctionWithOptionalString>();
 
             expect(mockedFunction).withArgs("arg").andReturn(MOCK_RETURN_VAL);
-            expect(mockedFunction).withArgs().andReturn(MOCK_RETURN_VAL + 1);
+            expect(mockedFunction).withArgs().andStubReturn(MOCK_RETURN_VAL + 1);
 
             assert.equal(MOCK_RETURN_VAL, mockedFunction("arg"));
 
@@ -68,7 +68,7 @@ describe("Interface test cases", () => {
         it("should match args correctly with unspecified optional args", () => {
             const mockedFunction = mock<TestFunctionWithOptionalString>();
 
-            expect(mockedFunction).withArgs("arg").andReturn(MOCK_RETURN_VAL);
+            expect(mockedFunction).withArgs("arg").andStubReturn(MOCK_RETURN_VAL);
             expect(mockedFunction).withArgs().andReturn(MOCK_RETURN_VAL + 1);
 
             assert.equal(MOCK_RETURN_VAL + 1, mockedFunction());
@@ -87,7 +87,7 @@ describe("Interface test cases", () => {
                 mockedFunction("noMatch");
             } catch (e) {
                 didThrow = true;
-                assert.equal(0, e.message.indexOf("func(noMatch) was called but no expectation matched."))
+                assert.match(e.message, /mock\("noMatch"\) was called but no expectation matched. Expectations:\nmock\("arg"\) at .*?StrictInterfaceTest.ts:82:13\nmock\(\) at .*?StrictInterfaceTest.ts:83:13\n/)
             }
 
             assert.equal(true, didThrow);

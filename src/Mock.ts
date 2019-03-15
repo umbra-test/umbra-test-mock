@@ -21,17 +21,20 @@ class InvocationHandler<T extends object> implements ProxyHandler<T> {
     private readonly cachedStubs: any = {};
     private readonly clazz: any | null | undefined;
     private readonly realObject: T;
+    private readonly mockName: string | null;
     private readonly options: MockOptions;
     private cachedFunctionStub: any | null = null;
 
-    constructor(clazz: any | null | undefined, realObject: T, options: MockOptions) {
+    constructor(clazz: any | null | undefined, realObject: T, mockName: string | null, options: MockOptions) {
         this.clazz = clazz;
         this.realObject = realObject;
+        this.mockName = mockName;
         this.options = options;
     }
 
     public apply(target: T, thisArg: any, argArray?: any): any {
         if (target === this.realObject) {
+            this.mockSingleFunctionIfNecessary(this.realObject as any);
             return this.cachedFunctionStub(...argArray);
         }
 
@@ -41,21 +44,14 @@ class InvocationHandler<T extends object> implements ProxyHandler<T> {
     public get<F extends MockableFunction>(target: T, p: PropertyKey, receiver: any): any {
         if (p === INTERNAL_MOCKER_NAME) {
             // this will happen if we're mocking a single function
-            if (!this.cachedFunctionStub) {
-                const mockedFunction: F = createMockedFunction();
-                const internalMocker = CreateInternalMocker<F>(mockedFunction, (target as any)[p], this.options);
-                if (internalMocker.isInExpectation) {
-                    internalMocker.isInExpectation = false;
-                }
-                this.cachedFunctionStub = mockedFunction;
-            }
+            this.mockSingleFunctionIfNecessary<F>((target as any)[p]);
 
             return this.cachedFunctionStub[INTERNAL_MOCKER_NAME];
         }
 
         if (this.clazz) {
             const realMethod = this.clazz[p];
-            if (!realMethod) {
+            if (realMethod === null || realMethod === undefined) {
                 const validMethods = Object.getOwnPropertyNames(this.clazz).join(", ");
                 throw new Error(`Method "${p.toString()}" was called on class "${this.clazz.constructor.name}". ` +
                     `Ensure method exists on prototype. Valid methods: [${validMethods}]`);
@@ -63,7 +59,7 @@ class InvocationHandler<T extends object> implements ProxyHandler<T> {
         }
         if (!this.cachedStubs[p]) {
             const mockedFunction: F = createMockedFunction();
-            Object.defineProperty(mockedFunction, "name", { value: p });
+            Object.defineProperty(mockedFunction, "name", { value: this.mockName !== null ? this.mockName : p });
             const internalMocker = CreateInternalMocker<F>(mockedFunction, (target as any)[p], this.options);
             if (internalMocker.isInExpectation) {
                 internalMocker.isInExpectation = false;
@@ -89,6 +85,21 @@ class InvocationHandler<T extends object> implements ProxyHandler<T> {
 
     public isExtensible(target: T): boolean {
         return false;
+    }
+
+    private mockSingleFunctionIfNecessary<F extends MockableFunction>(realFunction: F) {
+        if (!this.cachedFunctionStub) {
+            const mockedFunction: F = createMockedFunction();
+            const internalMocker = CreateInternalMocker<F>(mockedFunction, realFunction, this.options);
+            if (internalMocker.isInExpectation) {
+                internalMocker.isInExpectation = false;
+            }
+            if (this.mockName !== null) {
+                Object.defineProperty(mockedFunction, "name", { value: this.mockName });
+            }
+
+            this.cachedFunctionStub = mockedFunction;
+        }
     }
     /*
         getPrototypeOf(target: T): object | null {
@@ -128,17 +139,29 @@ function setDefaultOptions(options: Partial<MockOptions>) {
     defaultOptions = Object.assign(defaultOptions, options);
 }
 
-function mock<T>(object?: ClassConstructor<T>): T;
-function mock<T extends object>(): T;
-function mock<T extends object>(clazz?: ClassConstructor<T>, options: MockOptions = defaultOptions): T {
+function mock<T>(object?: ClassConstructor<T>, mockName?: string): T;
+function mock<T extends object>(mockName: string): T;
+function mock<T extends object>(clazz?: ClassConstructor<T> | string,
+    mockName?: string | null,
+    options: MockOptions = defaultOptions): T {
     // Passing a stub function here allows us to pass functions as well as objects to the proxy. This is because the
     // function is both an object and marked as [[Callable]]
     const stubFunction = (() => { /* intentionally blank */ }) as T;
-    return new Proxy<T>(stubFunction, new InvocationHandler<T>(clazz ? clazz.prototype : null, stubFunction, options));
+    if (typeof clazz === "string") {
+        mockName = clazz;
+        clazz = undefined;
+    }
+    if (!mockName) {
+        mockName = null;
+    }
+
+    return new Proxy<T>(stubFunction,
+        new InvocationHandler<T>(clazz ? clazz.prototype : null, stubFunction, mockName, options));
 }
 
 function spy<T extends object>(realObject: T, options: MockOptions = defaultOptions) {
-    return new Proxy(realObject, new InvocationHandler<T>(Object.getPrototypeOf(realObject), realObject, options));
+    return new Proxy(realObject,
+        new InvocationHandler<T>(Object.getPrototypeOf(realObject), realObject, null, options));
 }
 
 function expect<F extends MockableFunction>(mockedFunction: F): OngoingStubbing<F> {

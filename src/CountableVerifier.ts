@@ -1,6 +1,6 @@
-import { RecordedInvocation } from "./InternalMocker";
+import { ExpectationData, RecordedInvocation } from "./InternalMocker";
 import { MockableFunction } from "./Mock";
-import { ArgumentMatcher, findBestArgumentMatcher } from "./MockedFunction";
+import { ArgumentMatcher, verifyArgumentMatcher } from "./MockedFunction";
 import { Verifier } from "./Verify";
 
 class CountableVerifier<T extends MockableFunction> implements Verifier<T> {
@@ -8,32 +8,28 @@ class CountableVerifier<T extends MockableFunction> implements Verifier<T> {
     private readonly expectedArgs: ArgumentMatcher;
 
     constructor(expectedArgs: ArgumentMatcher,
-                verifyFunction: (actualCount: number, calledLocations: string[]) => void)
-    {
+                verifyFunction: (actualCount: number, calledLocations: string[]) => void) {
         this.expectedArgs = expectedArgs;
         this.verifyFunction = verifyFunction;
     }
 
-    public verify(args: RecordedInvocation<T>[]): void {
-        const results = this.countNumberOfInvocations(args);
+    public verify(args: RecordedInvocation<T>[], expectationData: ExpectationData<T>): void {
+        const results = this.countNumberOfInvocations(args, expectationData);
         this.verifyFunction(results.count, results.callLocations);
     }
 
-    private countNumberOfInvocations(args: RecordedInvocation<T>[]): { count: number, callLocations: string[] } {
-        let invocationCount = 0;
+    private countNumberOfInvocations(args: RecordedInvocation<T>[],
+                                     expectationData: ExpectationData<T>): { count: number, callLocations: string[] } {
         const callLocations: string[] = [];
         for (const invocation of args) {
-            if (this.expectedArgs === null ||
-                findBestArgumentMatcher([this.expectedArgs], invocation.params) !== null)
-            {
-                invocationCount++;
+            if (this.expectedArgs === null) {
                 if (invocation.location !== null) {
                     callLocations.push(invocation.location);
                 }
             }
         }
         return {
-            count: invocationCount,
+            count: expectationData.callCount,
             callLocations: callLocations
         };
     }

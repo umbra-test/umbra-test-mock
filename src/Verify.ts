@@ -1,4 +1,10 @@
-import { GetInternalMocker, INTERNAL_MOCKER_NAME, InternalMocker, RecordedInvocation } from "./InternalMocker";
+import {
+    ExpectationData,
+    GetInternalMocker,
+    INTERNAL_MOCKER_NAME,
+    InternalMocker,
+    RecordedInvocation
+} from "./InternalMocker";
 import { MockableFunction } from "./Mock";
 
 interface OnGoingVerification<F extends MockableFunction> {
@@ -19,10 +25,16 @@ interface OnGoingVerification<F extends MockableFunction> {
 
 interface Verifier<F extends MockableFunction> {
 
-    verify(args: RecordedInvocation<F>[]): void;
+    verify(args: RecordedInvocation<F>[], expectationData: ExpectationData<F>): void;
 }
 
-function verify<F extends MockableFunction>(mock: any): void {
+function verify(...mocks: any[]): void {
+    for (const mock of mocks) {
+        verifyMock(mock);
+    }
+}
+
+function verifyMock<F extends MockableFunction>(mock: any) {
     const internalMocker: InternalMocker<F> = GetInternalMocker(mock);
 
     const test = Object.keys(mock);
@@ -34,13 +46,13 @@ function verify<F extends MockableFunction>(mock: any): void {
         if (value) {
             const internalFunctionMocker = GetInternalMocker(value);
             if (internalFunctionMocker) {
-                verify(value);
+                verifyMock(value);
             }
         }
     }
 
     for (const expectation of internalMocker.expectations) {
-        expectation.verifier.verify(internalMocker.recordedInvocations);
+        expectation.verifier.verify(internalMocker.recordedInvocations, expectation);
     }
 }
 

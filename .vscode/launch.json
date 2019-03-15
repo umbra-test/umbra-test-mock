@@ -24,6 +24,7 @@
                 "--timeout",
                 "999999",
                 "--colors",
+                "--recursive",
                 "--require",
                 "source-map-support/register",
                 "${workspaceFolder}/build/tst",

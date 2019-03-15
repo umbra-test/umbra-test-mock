@@ -70,7 +70,7 @@ describe("ES6 class strict test cases", () => {
                 mockedTestInterface.method1StringArgNumberReturn(CALL_PARAM_1);
             } catch (e) {
                 didThrow = true;
-                assert.equal(e.message, "method1StringArgNumberReturn(callParam1) was called but no expectation was set");
+                assert.equal(e.message, `method1StringArgNumberReturn("callParam1") was called but no expectation was set.`);
             }
 
             assert.equal(didThrow, true);
@@ -87,7 +87,7 @@ describe("ES6 class strict test cases", () => {
                 mockedTestInterface.method1StringArgNumberReturn(CALL_PARAM_1);
             } catch (e) {
                 didThrow = true;
-                assert.match(e.message, /method1StringArgNumberReturn\(callParam1\) was called but no expectation matched. Expectations:\nmethod1StringArgNumberReturn\(randoString\) at .*?StrictEs6ClassTest\.ts:82:94\nmethod1StringArgNumberReturn\(callPraam1\) at .*?StrictEs6ClassTest\.ts:83:93\n/);
+                assert.match(e.message, /method1StringArgNumberReturn\("callParam1"\) was called but no expectation matched. Expectations:\nmethod1StringArgNumberReturn\("randoString"\) at .*?StrictEs6ClassTest\.ts:82:13\nmethod1StringArgNumberReturn\("callPraam1"\) at .*?StrictEs6ClassTest\.ts:83:13\n/);
             }
 
             assert.equal(didThrow, true);

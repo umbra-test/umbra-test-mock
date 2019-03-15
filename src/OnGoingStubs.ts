@@ -1,19 +1,20 @@
 import { ArgumentValidator, eq } from "./ArgumentValidator";
 import { CountableVerifier } from "./CountableVerifier";
-import { GetInternalMocker, InternalMocker, StubData } from "./InternalMocker";
+import { GetInternalMocker, InternalMocker, ExpectationData } from "./InternalMocker";
 import { Answer, MockableFunction } from "./Mock";
 import { ArgumentMatcher } from "./MockedFunction";
 import { StacktraceUtils } from "./StackTraceParser";
+import { Verifier } from "./Verify";
 
 type UnwrapPromise<T extends Promise<any>> = T extends Promise<infer P> ? P : never;
 
 interface OngoingStubbing<F extends MockableFunction> {
 
-    inOrder(): OngoingStubbing<F>;
-
     withArgs(...args: Parameters<F>): OngoingStubbing<F>;
 
     andReturn(...values: ReturnType<F>[]): OngoingStubbing<F>;
+
+    andStubReturn(...values: ReturnType<F>[]): void;
 
     andThrow(...error: Error[]): OngoingStubbing<F>;
 
@@ -80,56 +81,43 @@ function normalizeMatcherArgs<F extends MockableFunction>(args: Parameters<F>): 
     return normalizedArgs;
 }
 
-enum StubbingState {
-    NoInfo = 0,
-    HasArgs = 1,
-    HasReturnValue = 2,
-    HasCount = 4,
-}
-
 const CONSTRUCTOR_STACK_OFFSET = 1;
 class OnGoingStubs<F extends MockableFunction> implements OngoingStubbing<F> {
 
     private readonly mockedFunction: F;
     private readonly internalMocker: InternalMocker<F>;
     private currentArgumentExpectations: ArgumentMatcher;
-    private state: StubbingState;
-    private verifyInOrder: boolean;
+    private currentAnswer: Answer<F> | null;
+    private expectation: ExpectationData<F>;
 
     constructor(mockedFunction: F) {
         this.mockedFunction = mockedFunction;
         this.internalMocker = GetInternalMocker(mockedFunction);
         this.currentArgumentExpectations = null;
         this.internalMocker.isInExpectation = true;
-        this.state = StubbingState.NoInfo;
-        this.verifyInOrder = false;
+        this.currentAnswer = null;
         // Default to expecting 1
-        this.internalTimes(1, CONSTRUCTOR_STACK_OFFSET);
-    }
-
-    public inOrder(): OnGoingStubs<F> {
-        this.verifyInOrder = true;
-        return this;
+        this.expectation = this.internalTimes(1, CONSTRUCTOR_STACK_OFFSET);
     }
 
     public withArgs(...args: Parameters<F>): OnGoingStubs<F> {
         this.currentArgumentExpectations = normalizeMatcherArgs(args);
-        // tslint:disable-next-line: no-bitwise
-        this.state = StubbingState.HasArgs | this.state;
+        this.expectation.expectedArgs = this.currentArgumentExpectations;
         return this;
     }
 
-    public andReturn(...values: ReturnType<F>[]): OngoingStubbing<F> {
-        for (const value of values) {
-            this.setAnswerForAguments(createDirectReturnAnswer(value));
-        }
+    public andReturn(value: ReturnType<F>): OngoingStubbing<F> {
+        this.setAnswerForAguments(createDirectReturnAnswer(value));
         return this;
     }
 
-    public andThrow(...errors: Error[]): OngoingStubbing<F> {
-        for (const error of errors) {
-            this.setAnswerForAguments(createDirectThrowAnswer(error));
-        }
+    public andStubReturn(value: ReturnType<F>): void {
+        this.setAnswerForAguments(createDirectReturnAnswer(value));
+        this.atLeast(0);
+    }
+
+    public andThrow(error: Error): OngoingStubbing<F> {
+        this.setAnswerForAguments(createDirectThrowAnswer(error));
         return this;
     }
 
@@ -142,64 +130,57 @@ class OnGoingStubs<F extends MockableFunction> implements OngoingStubbing<F> {
         return this;
     }
 
-    public andAnswer(...answers: Answer<ReturnType<F>>[]): OngoingStubbing<F> {
-        for (const answer of answers) {
-            this.setAnswerForAguments(answer);
-        }
+    public andAnswer(answer: Answer<ReturnType<F>>): OngoingStubbing<F> {
+        this.setAnswerForAguments(answer);
         return this;
     }
 
-    public andResolve(...values: UnwrapPromise<ReturnType<F>>[]): OngoingStubbing<F> {
-        for (const value of values) {
-            this.setAnswerForAguments(createPromiseResolveAnswer(value));
-        }
+    public andResolve(value: UnwrapPromise<ReturnType<F>>): OngoingStubbing<F> {
+        this.setAnswerForAguments(createPromiseResolveAnswer(value));
         return this;
     }
 
-    public andReject(...errors: Error[]): OngoingStubbing<F> {
-        for (const error of errors) {
-            this.setAnswerForAguments(createPromiseRejectAnswer(error));
-        }
+    public andReject(error: Error): OngoingStubbing<F> {
+        this.setAnswerForAguments(createPromiseRejectAnswer(error));
         return this;
     }
 
     public times(count: number): OngoingStubbing<F> {
-        return this.internalTimes(count);
+        this.internalTimes(count);
+        return this;
     }
 
     public once(): OngoingStubbing<F> {
-        return this.internalTimes(1);
+        this.internalTimes(1);
+        return this;
     }
 
     public twice(): OngoingStubbing<F> {
-        return this.internalTimes(2);
+        this.internalTimes(2);
+        return this;
     }
 
     public atLeast(atLeastInvocations: number): OngoingStubbing<F> {
         const location = StacktraceUtils.getCurrentMockLocation(4);
         const verifier = new CountableVerifier(this.currentArgumentExpectations,
             (actualValue: number, calledLocations: string[]) => {
-                if (atLeastInvocations <= actualValue) {
+                if (atLeastInvocations < actualValue) {
                     const callLocation = calledLocations.length > 0 ? "Called at:\n" + calledLocations.join("\n") : "";
                     throw new Error(`Expected at least ${atLeastInvocations} invocations, got ${actualValue}.
 Expected at: ${location}\n${callLocation}\n\u00A0`);
                 }
         });
-        this.internalMocker.expectations.push({
-            verifier: verifier,
-            location: location
-        });
-
+        this.addExpectation(verifier, location);
         return this;
     }
 
     public never(): OngoingStubbing<F> {
-        this.resetExpectations();
-        return this.internalTimes(0);
+        this.internalTimes(0);
+        return this;
     }
 
     // Required to set stack trace correctly
-    private internalTimes(count: number, stackOffset: number = 0) {
+    private internalTimes(count: number, stackOffset: number = 0): ExpectationData<F> {
         const location = StacktraceUtils.getCurrentMockLocation(3 + stackOffset);
         const verifier = new CountableVerifier(this.currentArgumentExpectations,
             (actualValue: number, calledLocations: string[]) => {
@@ -209,31 +190,31 @@ Expected at: ${location}\n${callLocation}\n\u00A0`);
 Expected at: ${location}\n${callLocation}\n\u00A0`);
                 }
         });
-        this.resetExpectations();
-        this.internalMocker.expectations.push({
-            verifier: verifier,
-            location: location
-        });
+        return this.addExpectation(verifier, location);
+    }
 
-        return this;
+    private addExpectation(verifier: Verifier<F>, location: string | null): ExpectationData<F>  {
+        if (this.expectation) {
+            this.expectation.verifier = verifier;
+            this.expectation.location = location;
+            return this.expectation;
+        } else {
+            const expectation: ExpectationData<F> = {
+                verifier: verifier,
+                location: location,
+                answer: this.currentAnswer,
+                expectedArgs: this.currentArgumentExpectations,
+                callCount: 0
+            };
+            this.internalMocker.expectations.push(expectation);
+            this.expectation = expectation;
+            return expectation;
+        }
     }
 
     private setAnswerForAguments(answer: Answer<F>): void {
-        let data: StubData<F> | undefined = this.internalMocker.stubs.get(this.currentArgumentExpectations);
-        if (data === undefined) {
-            data = {
-                answers: [],
-                location: StacktraceUtils.getCurrentMockLocation(3)
-            };
-            this.internalMocker.stubs.set(this.currentArgumentExpectations, data);
-        }
-        data.answers.push(answer);
-    }
-
-    private resetExpectations() {
-        while (this.internalMocker.expectations.length > 0) {
-            this.internalMocker.expectations.pop();
-        }
+        this.currentAnswer = answer;
+        this.expectation.answer = answer;
     }
 }
 
