@@ -5,7 +5,7 @@ function any<T>(): T {
         matches: () => true,
         description: () => "any()",
     };
-    return validator as any;
+    return validator as any as T;
 }
 
 function gt<T extends number>(value: T): T {
@@ -13,7 +13,7 @@ function gt<T extends number>(value: T): T {
         matches: ((realValue: T) => realValue > value),
         description: () => `gt(${JSON.stringify(value)})`,
     };
-    return validator as any;
+    return validator as any as T;
 }
 
 function lt<T extends number>(value: T): T {
@@ -21,7 +21,7 @@ function lt<T extends number>(value: T): T {
         matches: ((realValue: T) => realValue < value),
         description: () => `lt(${JSON.stringify(value)})`,
     };
-    return validator as any;
+    return validator as any as T;
 }
 
 function gte<T extends number>(value: T): T {
@@ -29,7 +29,7 @@ function gte<T extends number>(value: T): T {
         matches: ((realValue: T) => realValue >= value),
         description: () => `gte(${JSON.stringify(value)})`,
     };
-    return validator as any;
+    return validator as any as T;
 }
 
 function lte<T extends number>(value: T): T {
@@ -37,7 +37,7 @@ function lte<T extends number>(value: T): T {
         matches: ((realValue: T) => realValue <= value),
         description: () => `lte(${JSON.stringify(value)})`,
     };
-    return validator as any;
+    return validator as any as T;
 }
 
 function eq<T>(value: T): T {
@@ -45,7 +45,23 @@ function eq<T>(value: T): T {
         matches: ((realValue: T) => deepEqual(value, realValue)),
         description: () => JSON.stringify(value),
     };
-    return validator as any;
+    return validator as any as T;
+}
+
+function startsWith(value: string) {
+    const validator: ArgumentValidator<string> = {
+        matches: ((realValue: string) => realValue.startsWith(value)),
+        description: () => "startsWith " + value,
+    };
+    return validator as any as string;
+}
+
+function regexMatches(value: RegExp) {
+    const validator: ArgumentValidator<string> = {
+        matches: ((realValue: string) => value.test(realValue)),
+        description: () => value.toString(),
+    };
+    return validator as any as string;
 }
 
 function matcher<T>(func: (arg: T) => boolean): T {
@@ -69,6 +85,8 @@ export {
     gte,
     lt,
     lte,
+    startsWith,
+    regexMatches,
     matcher,
     ArgumentValidator,
 };

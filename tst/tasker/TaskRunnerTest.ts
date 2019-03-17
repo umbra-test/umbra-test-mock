@@ -1,6 +1,6 @@
 import { TaskRunner } from "./TaskRunner";
 import { Task, AsyncTask } from "./Task";
-import { mock, verify, expect, spy } from "../../src";
+import { mock, verify, expect, spy, inOrder } from "../../src";
 import { assert } from "chai";
 
 type OnTaskStart = (taskName: string, taskDependencies: string[]) => void;
@@ -21,17 +21,21 @@ describe("TaskRunner", () => {
 
     describe("missing tasks", () => {
         it("errors if the expected task doesn't exist", () => {
-            return taskRunner.run("root").catch((error) => {
-                assert.exists(error);
-            });
+            return taskRunner.run("root")
+                .then(() => assert.fail("Should not succeed"))
+                .catch((error) => {
+                    assert.exists(error);
+                });
         });
 
         it("errors if the expected dependencies don't exist", () => {
             const rootTask = addTask("root", ["missingTask"]);
 
-            return taskRunner.run("root").catch(() => {
-                verify(rootTask);
-            });
+            return taskRunner.run("root")
+                .then(() => assert.fail("Should not succeed"))
+                .catch(() => {
+                    verify(rootTask);
+                });
         });
     });
 
@@ -40,9 +44,11 @@ describe("TaskRunner", () => {
             const child1 = addTask("child1", ["root"]);
             const root = addTask("root", ["child1"]);
 
-            return taskRunner.run("root").catch(() => {
-                verify(root, child1);
-            });
+            return taskRunner.run("root")
+                .then(() => assert.fail("Should not succeed"))
+                .catch(() => {
+                    verify(root, child1);
+                });
         });
 
         it("errors when there's a long cycle", () => {
@@ -52,17 +58,21 @@ describe("TaskRunner", () => {
             const child1 = addTask("child1", ["child2"]);
             const root = addTask("root", ["child1"]);
 
-            return taskRunner.run("root").catch(() => {
-                verify(root, child1, child2, child3, child4);
-            });
+            return taskRunner.run("root")
+                .then(() => assert.fail("Should not succeed"))
+                .catch(() => {
+                    verify(root, child1, child2, child3, child4);
+                });
         });
 
         it("errors a task depends on itself", () => {
             const root = addTask("root", ["root"]);
 
-            return taskRunner.run("root").catch(() => {
-                verify(root);
-            });
+            return taskRunner.run("root")
+                .then(() => assert.fail("Should not succeed"))
+                .catch(() => {
+                    verify(root);
+                });
         });
     });
 
@@ -75,7 +85,7 @@ describe("TaskRunner", () => {
             });
         });
 
-        it("executes a single task without dependencies nor an actual callback", function () {
+        it("executes a single task without dependencies nor an actual callback", () => {
             taskRunner.addTask("root");
             return taskRunner.run("root");
         });
@@ -123,28 +133,16 @@ describe("TaskRunner", () => {
         });
 
         it("executes a tree of nodes, in order", () => {
-            let currentOrder = 0;
-            const expectOrder = (expectedOrder: number) => spy(() => assert.equal(currentOrder++, expectedOrder));
+            const child2 = addTask("child2");
+            const child1 = addTask("child1", ["child2"]);
+            const root = addTask("root", ["child1", "child2"]);
 
-            const child2 = expectOrder(0);
-            taskRunner.addTask("child2", [], child2);
-
-            const child1 = expectOrder(1);
-            taskRunner.addTask("child1", ["child2"], child1);
-
-            const root = expectOrder(2);
-            taskRunner.addTask("root", ["child1", "child2"], root);
-
-            /*inOrder(
+            inOrder(
                 expect(child2).once(),
                 expect(child1).once(),
                 expect(root).once(),
-            );*/
+            );
 
-
-            expect(child2).once();
-            expect(child1).once();
-            expect(root).once();
             return taskRunner.run("root").then(() => {
                 verify(root, child1, child2);
             });
@@ -153,7 +151,8 @@ describe("TaskRunner", () => {
         it("runs leaf nodes asynchronously and in parallel if able", () => {
             const childDones: any[] = [];
 
-            const onChildStarted = () => {
+            const onChildStarted = (done: any) => {
+                childDones.push(done);
                 if (childDones.length === 2) {
                     for (const done of childDones) {
                         done();
@@ -162,13 +161,11 @@ describe("TaskRunner", () => {
             };
 
             const child2: AsyncTask<any> = (results, done) => {
-                childDones.push(done);
-                onChildStarted();
+                onChildStarted(done);
             };
 
             const child1: AsyncTask<any> = (results, done) => {
-                childDones.push(done);
-                onChildStarted();
+                onChildStarted(done);
             };
 
             const root: Task<any> = mock();
@@ -178,10 +175,9 @@ describe("TaskRunner", () => {
             taskRunner.addTask("child1", child1);
             taskRunner.addTask("root", ["child1", "child2"], root);
 
-            return taskRunner.run("root")
-                .then(() => {
-                    verify(root);
-                });
+            return taskRunner.run("root").then(() => {
+                verify(root);
+            });
         });
 
         it("should throw an error when adding a task when one already exists.", () => {
@@ -547,7 +543,7 @@ describe("TaskRunner", () => {
             taskRunner = new TaskRunner({ onTaskEnd: onTaskEnd });
 
             const child1 = addTask("child1");
-            
+
             expect(child1).once();
             expect(onTaskEnd).withArgs("child1");
             expect(onTaskEnd).withArgs("root");

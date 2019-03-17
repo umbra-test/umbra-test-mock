@@ -1,6 +1,6 @@
 import { ArgumentValidator, eq } from "./ArgumentValidator";
 import { CountableVerifier } from "./CountableVerifier";
-import { GetInternalMocker, InternalMocker, ExpectationData } from "./InternalMocker";
+import { ExpectationData, GetInternalMocker, InternalMocker } from "./InternalMocker";
 import { Answer, MockableFunction } from "./Mock";
 import { ArgumentMatcher } from "./MockedFunction";
 import { StacktraceUtils } from "./StackTraceParser";
@@ -84,20 +84,22 @@ function normalizeMatcherArgs<F extends MockableFunction>(args: Parameters<F>): 
 const CONSTRUCTOR_STACK_OFFSET = 1;
 class OnGoingStubs<F extends MockableFunction> implements OngoingStubbing<F> {
 
-    private readonly mockedFunction: F;
-    private readonly internalMocker: InternalMocker<F>;
+    public readonly internalMocker: InternalMocker<F>;
     private currentArgumentExpectations: ArgumentMatcher;
     private currentAnswer: Answer<F> | null;
     private expectation: ExpectationData<F>;
 
     constructor(mockedFunction: F) {
-        this.mockedFunction = mockedFunction;
         this.internalMocker = GetInternalMocker(mockedFunction);
         this.currentArgumentExpectations = null;
         this.internalMocker.isInExpectation = true;
         this.currentAnswer = null;
         // Default to expecting 1
         this.expectation = this.internalTimes(1, CONSTRUCTOR_STACK_OFFSET);
+    }
+
+    public getExpectation(): ExpectationData<F> {
+        return this.expectation;
     }
 
     public withArgs(...args: Parameters<F>): OnGoingStubs<F> {
@@ -164,7 +166,7 @@ class OnGoingStubs<F extends MockableFunction> implements OngoingStubbing<F> {
         const location = StacktraceUtils.getCurrentMockLocation(4);
         const verifier = new CountableVerifier(this.currentArgumentExpectations,
             (actualValue: number, calledLocations: string[]) => {
-                if (atLeastInvocations < actualValue) {
+                if (atLeastInvocations > actualValue) {
                     const callLocation = calledLocations.length > 0 ? "Called at:\n" + calledLocations.join("\n") : "";
                     throw new Error(`Expected at least ${atLeastInvocations} invocations, got ${actualValue}.
 Expected at: ${location}\n${callLocation}\n\u00A0`);
@@ -200,11 +202,13 @@ Expected at: ${location}\n${callLocation}\n\u00A0`);
             return this.expectation;
         } else {
             const expectation: ExpectationData<F> = {
+                internalMocker: this.internalMocker,
                 verifier: verifier,
                 location: location,
                 answer: this.currentAnswer,
                 expectedArgs: this.currentArgumentExpectations,
-                callCount: 0
+                callCount: 0,
+                inOrderOverride: null,
             };
             this.internalMocker.expectations.push(expectation);
             this.expectation = expectation;

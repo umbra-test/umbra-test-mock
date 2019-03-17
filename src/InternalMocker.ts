@@ -1,13 +1,15 @@
-import { Answer, MockableFunction, MockOptions } from "./Mock";
+import { Answer, InOrderExpectation, MockableFunction, MockOptions } from "./Mock";
 import { ArgumentMatcher } from "./MockedFunction";
 import { Verifier } from "./Verify";
 
 interface ExpectationData<F extends MockableFunction> {
+    internalMocker: InternalMocker<F>;
     verifier: Verifier<any>;
     location: string | null;
     expectedArgs: ArgumentMatcher;
     answer: Answer<F> | null;
     callCount: number;
+    inOrderOverride: InOrderExpectation | null;
 }
 
 interface RecordedInvocation<F extends MockableFunction> {
@@ -25,6 +27,10 @@ interface InternalMocker<F extends MockableFunction> {
 
     readonly options: MockOptions;
 
+    mockName: string | null;
+
+    inProgressInOrder: InOrderExpectation[];
+
     isInExpectation: boolean;
 }
 
@@ -38,13 +44,19 @@ function GetInternalMocker<F extends MockableFunction>(mock: F): InternalMocker<
     return internalMocker;
 }
 
-function CreateInternalMocker<F extends MockableFunction>(mockedFunction: F, realFunction: F, options: MockOptions) {
+function CreateInternalMocker<F extends MockableFunction>(mockedFunction: F,
+                                                          realFunction: F,
+                                                          mockName: string | null,
+                                                          options: MockOptions)
+{
     const internalMocker: InternalMocker<F> = {
         expectations: [],
         recordedInvocations: [],
         realFunction: realFunction,
         options: options,
+        inProgressInOrder: [],
         isInExpectation: false,
+        mockName: mockName
     };
 
     (mockedFunction as any)[INTERNAL_MOCKER_NAME] = internalMocker;

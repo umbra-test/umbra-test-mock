@@ -1,4 +1,4 @@
-import { CreateInternalMocker, INTERNAL_MOCKER_NAME } from "./InternalMocker";
+import { CreateInternalMocker, ExpectationData, INTERNAL_MOCKER_NAME } from "./InternalMocker";
 import { createMockedFunction } from "./MockedFunction";
 import { OngoingStubbing, OnGoingStubs } from "./OnGoingStubs";
 
@@ -12,6 +12,7 @@ enum StrictnessMode {
 
 interface MockOptions {
     strictMode: StrictnessMode;
+    inOrder: boolean;
 }
 
 type ClassConstructor<T> = (new (...args: any[]) => T) | (new () => T);
@@ -59,8 +60,9 @@ class InvocationHandler<T extends object> implements ProxyHandler<T> {
         }
         if (!this.cachedStubs[p]) {
             const mockedFunction: F = createMockedFunction();
-            Object.defineProperty(mockedFunction, "name", { value: this.mockName !== null ? this.mockName : p });
-            const internalMocker = CreateInternalMocker<F>(mockedFunction, (target as any)[p], this.options);
+            const mockName: string = this.mockName !== null ? this.mockName : p.toString();
+            Object.defineProperty(mockedFunction, "name", { value: mockName });
+            const internalMocker = CreateInternalMocker<F>(mockedFunction, (target as any)[p], mockName, this.options);
             if (internalMocker.isInExpectation) {
                 internalMocker.isInExpectation = false;
             }
@@ -90,12 +92,12 @@ class InvocationHandler<T extends object> implements ProxyHandler<T> {
     private mockSingleFunctionIfNecessary<F extends MockableFunction>(realFunction: F) {
         if (!this.cachedFunctionStub) {
             const mockedFunction: F = createMockedFunction();
-            const internalMocker = CreateInternalMocker<F>(mockedFunction, realFunction, this.options);
-            if (internalMocker.isInExpectation) {
-                internalMocker.isInExpectation = false;
-            }
             if (this.mockName !== null) {
                 Object.defineProperty(mockedFunction, "name", { value: this.mockName });
+            }
+            const internalMocker = CreateInternalMocker<F>(mockedFunction, realFunction, this.mockName, this.options);
+            if (internalMocker.isInExpectation) {
+                internalMocker.isInExpectation = false;
             }
 
             this.cachedFunctionStub = mockedFunction;
@@ -133,6 +135,7 @@ class InvocationHandler<T extends object> implements ProxyHandler<T> {
 
 let defaultOptions: MockOptions = {
     strictMode: StrictnessMode.Strict,
+    inOrder: false
 };
 
 function setDefaultOptions(options: Partial<MockOptions>) {
@@ -142,8 +145,9 @@ function setDefaultOptions(options: Partial<MockOptions>) {
 function mock<T>(object?: ClassConstructor<T>, mockName?: string): T;
 function mock<T extends object>(mockName: string): T;
 function mock<T extends object>(clazz?: ClassConstructor<T> | string,
-    mockName?: string | null,
-    options: MockOptions = defaultOptions): T {
+                                mockName?: string | null,
+                                options: MockOptions = defaultOptions): T
+{
     // Passing a stub function here allows us to pass functions as well as objects to the proxy. This is because the
     // function is both an object and marked as [[Callable]]
     const stubFunction = (() => { /* intentionally blank */ }) as T;
@@ -168,12 +172,32 @@ function expect<F extends MockableFunction>(mockedFunction: F): OngoingStubbing<
     return new OnGoingStubs(mockedFunction);
 }
 
+interface InOrderExpectation {
+    expectations: ExpectationData<any>[];
+    currentIndex: number;
+}
+
+function inOrder(...stubs: OngoingStubbing<any>[]) {
+    const inOrderExpectation: InOrderExpectation = {
+        expectations: [],
+        currentIndex : 0
+    };
+    const castStubs = stubs as OnGoingStubs<any>[];
+    for (const stub of castStubs) {
+        const expectation: ExpectationData<any> = stub.getExpectation();
+        inOrderExpectation.expectations.push(expectation);
+        expectation.inOrderOverride = inOrderExpectation;
+    }
+}
+
 export {
+    inOrder,
     mock,
     spy,
     expect,
     setDefaultOptions,
     MockableFunction,
+    InOrderExpectation,
     Answer,
     MockOptions,
     StrictnessMode,

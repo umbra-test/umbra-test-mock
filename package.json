@@ -7,8 +7,8 @@
     "test": "tsc && mocha --require source-map-support/register --recursive build/tst",
     "lint": "tslint --project ."
   },
-  "author": "",
-  "license": "ISC",
+  "author": "BuckeyeDude",
+  "license": "MIT",
   "dependencies": {},
   "devDependencies": {
     "@types/chai": "^4.1.7",

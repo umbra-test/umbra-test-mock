@@ -17,6 +17,11 @@ class TestClass {
         return REAL_NUMBER_RETURN_VALUE;
     }
 
+    method1ObjectArgNumberReturn(arg1: {}): number {
+        console.log("Enter method with one object arg");
+        return REAL_NUMBER_RETURN_VALUE;
+    }
+
     method2StringArgNumberReturn(arg1: string, arg2: string): number {
         console.log("Enter method with two string args");
         return REAL_NUMBER_RETURN_VALUE;
