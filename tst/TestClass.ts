@@ -27,6 +27,11 @@ class TestClass {
         return REAL_NUMBER_RETURN_VALUE;
     }
 
+    method2StringOptionalArgNumberReturn(arg1: string, arg2?: string): number {
+        console.log("Enter method with two string args (optional second)");
+        return REAL_NUMBER_RETURN_VALUE;
+    }
+
     methodNoArgPromiseReturn(): Promise<number> {
         return Promise.resolve(REAL_NUMBER_RETURN_VALUE);
     }

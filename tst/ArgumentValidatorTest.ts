@@ -55,6 +55,31 @@ describe("Argument validator test cases", () => {
             verify(mockedTestInterface);
         });
 
+        it("should prefer the more specific matchers over `any` version in order", () => {
+            const mockedTestInterface = mock(TestClass);
+
+            expect(mockedTestInterface.method1StringArgNumberReturn).withArgs("0").andStubReturn(-1);
+            expect(mockedTestInterface.method1StringArgNumberReturn).withArgs(any()).andStubReturn(0);
+
+            assert.equal(mockedTestInterface.method1StringArgNumberReturn("0"), -1);
+            assert.equal(mockedTestInterface.method1StringArgNumberReturn("1"), 0);
+
+            verify(mockedTestInterface);
+        });
+
+
+        it("should prefer the more specific matchers over `any` version out of order", () => {
+            const mockedTestInterface = mock(TestClass);
+
+            expect(mockedTestInterface.method1StringArgNumberReturn).withArgs(any()).andStubReturn(0);
+            expect(mockedTestInterface.method1StringArgNumberReturn).withArgs("0").andStubReturn(-1);
+
+            assert.equal(mockedTestInterface.method1StringArgNumberReturn("0"), -1);
+            assert.equal(mockedTestInterface.method1StringArgNumberReturn("1"), 0);
+
+            verify(mockedTestInterface);
+        });
+
         it("should prefer the more specific `any` version when given a default", () => {
             const mockedTestInterface = mock(TestClass);
 
@@ -187,16 +212,21 @@ describe("Argument validator test cases", () => {
             verify(mockedTestInterface);
         });
 
-        it("first eligible matcher wins", () => {
+        it("matches the most most eligible expectation", () => {
             const mockedTestInterface = mock(TestClass);
 
-            expect(mockedTestInterface.method2StringArgNumberReturn).withArgs(any(), any()).andStubReturn(0);
-            expect(mockedTestInterface.method2StringArgNumberReturn).withArgs("0", "2").andStubReturn(1);
+            expect(mockedTestInterface.method2StringOptionalArgNumberReturn).withArgs(any()).andStubReturn(4);
+            expect(mockedTestInterface.method2StringOptionalArgNumberReturn).withArgs(any(), any()).andStubReturn(0);
+            expect(mockedTestInterface.method2StringOptionalArgNumberReturn).withArgs("1", "0").andStubReturn(2);
+            expect(mockedTestInterface.method2StringOptionalArgNumberReturn).withArgs("1", regexMatches(/^1/))
+                .andStubReturn(3);
+            expect(mockedTestInterface.method2StringOptionalArgNumberReturn).withArgs("0", "2").andStubReturn(1);
 
-            assert.equal(mockedTestInterface.method2StringArgNumberReturn("0", "2"), 0);
-            assert.equal(mockedTestInterface.method2StringArgNumberReturn("0", "1"), 0);
-            assert.equal(mockedTestInterface.method2StringArgNumberReturn("0", "0"), 0);
-            assert.equal(mockedTestInterface.method2StringArgNumberReturn("1", "1"), 0);
+            assert.equal(mockedTestInterface.method2StringOptionalArgNumberReturn("0", "2"), 1);
+            assert.equal(mockedTestInterface.method2StringOptionalArgNumberReturn("0", "1"), 0);
+            assert.equal(mockedTestInterface.method2StringOptionalArgNumberReturn("0", "0"), 0);
+            assert.equal(mockedTestInterface.method2StringOptionalArgNumberReturn("1", "1"), 3);
+            assert.equal(mockedTestInterface.method2StringOptionalArgNumberReturn("1"), 4);
 
             verify(mockedTestInterface);
         });

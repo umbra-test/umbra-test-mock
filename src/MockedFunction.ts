@@ -17,6 +17,7 @@ function findBestArgumentMatcher<F extends MockableFunction>(
             return -1;
         }
 
+        // If we're expecting something in order it must be given precedence over all other matchers
         if (a.inOrderOverride !== null && b.inOrderOverride == null) {
             return -1;
         }
@@ -25,15 +26,29 @@ function findBestArgumentMatcher<F extends MockableFunction>(
             return 1;
         }
 
+        // If we have expectations set
         if (a.expectedArgs === null && b.expectedArgs === null) {
+            // No expectations set on either mock equivalent of:
+            // expect(func1).once()
+            // expect(func2).once()
             return 0;
         } else if (a.expectedArgs === null) {
+            // b should be preferred if it has args and a does not
             return 1;
         } else if (b.expectedArgs === null) {
             return -1;
         }
 
-        return b.expectedArgs.length - a.expectedArgs.length;
+        // More args is preferred. This is to handle overloads/optional args properly
+        const argLengthDifference = b.expectedArgs.length - a.expectedArgs.length;
+        if (argLengthDifference !== 0) {
+            return argLengthDifference;
+        }
+
+        // Finally sort by matcher precedence. In general this means eq() first, any() last
+        const aMatcherPrecedence = sumMatchers(a.expectedArgs);
+        const bMatcherPrecedence = sumMatchers(b.expectedArgs);
+        return bMatcherPrecedence - aMatcherPrecedence;
     });
     for (const expectation of expectations) {
         argumentMatcherArray.insert(expectation);
@@ -47,6 +62,14 @@ function findBestArgumentMatcher<F extends MockableFunction>(
     }
 
     return null;
+}
+
+function sumMatchers(expectedArgs: ArgumentValidator<any>[]): number {
+    let sum = 0;
+    for (const arg of expectedArgs) {
+        sum += arg.precedence !== undefined ? arg.precedence : 0;
+    }
+    return sum;
 }
 
 function verifyArgumentMatcher(expectedArgs: ArgumentMatcher, args: any[]): boolean {

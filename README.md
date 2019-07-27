@@ -12,7 +12,7 @@ Umbra mock is a mocking framework built to take full advantage of ES6 proxies an
 npm install --save-dev umbra-mock
 ```
 
-Note: Your runtime environment must be ES5 compatible, and must have an ES6 Proxy implementation available globally.
+Note: Your runtime environment must be ES5 compatible, and must have an ES6 Proxy implementation available globally. For Node this means you must be using Node 6 or greater
 
 To declare a mock:
 ```typescript
@@ -28,7 +28,7 @@ expect(someObject.run).once();
 ```
 
 ## Umbra In Depth
-
+### Basic example
 Imagine we have this code for itereating over a list of items
 ```typescript
 type Callback<T> = (item: T) => void;
@@ -81,11 +81,46 @@ Also note in this example we use the `inOrder` function to ensure the list is in
 ```typescript
 
 ```
-
+### Matchers
+Often you might not want to specify the exact argument for the mock. In cases of ambiguity like this you can use matchers to match multiple cases. For example:
 
 ```typescript
-expect(callback.executions[0].args[0]).toBe(0);
+type Callback<T> = (item1: T, item2: T) => void;
+const callback: Callback<number> = mock();
+expect(callback).withArgs(0, any()).once();
+// First param to callback must be 0, the second arg can be any value
 ```
+
+Matchers are given lower precedence than more specific arguments, regardless of ordering. For example:
+```typescript
+type Callback<T> = (item1: T, item2: T) => number;
+const callback: Callback<number> = mock();
+expect(callback).withArgs(0, any()).andReturn(1).once();
+expect(callback).withArgs(0, 1).andReturn(0).once();
+// callback(0, 1) will return 0
+// callback(0, 0) will return 1
+
+```
+
+### Capturing arguments
+Many times you may need access to once of the values pass to your mock function. A common example is a callback, or an event listener of some kind. To gain access to this value you use a `Capture`. For example:
+
+```typescript
+type Callback = () => void;
+type CallbackTakingFunction = (callback: Callback) => void;
+
+const mockedFunction: CallbackTakingFunction = mock();
+const callbackCapture: Capture<Callback> = newCapture();
+expect(mockedFunction).withArgs(callbackCapture.capture());
+expect(mockedCallback).once();
+
+const realCallback = () => console.log("Do something")
+mockedFunction(realCallback);
+const lastCapture: Callback = callbackCapture.last;
+// Last capture is now the same as realCallback
+```
+
+
 
 
 ## Why not to use Umbra?

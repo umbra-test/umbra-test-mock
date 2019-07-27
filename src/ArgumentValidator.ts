@@ -2,6 +2,8 @@ import { deepEqual } from "./Utils/DeepEqual";
 
 function any<T>(): T {
     const validator: ArgumentValidator<T> = {
+        // Any has very lower precedence, so other matchers will match first
+        precedence: -1,
         matches: () => true,
         description: () => "any()",
     };
@@ -42,6 +44,7 @@ function lte<T extends number>(value: T): T {
 
 function eq<T>(value: T): T {
     const validator: ArgumentValidator<T> = {
+        precedence: 1,
         matches: ((realValue: T) => deepEqual(value, realValue)),
         description: () => JSON.stringify(value),
     };
@@ -72,6 +75,12 @@ function matcher<T>(func: (arg: T) => boolean): T {
 }
 
 interface ArgumentValidator<T> {
+
+    /**
+     * Represents the importance of validator compared to other matchers. Higher number means more important, and thus 
+     * more likely to be matches
+     */
+    precedence?: number;
 
     matches(arg: T): boolean;
 
