@@ -7,8 +7,7 @@ import { SortedArray } from "./Utils/SortedArray";
 type ArgumentMatcher = ArgumentValidator<any>[] | null;
 function findBestArgumentMatcher<F extends MockableFunction>(
     expectations: ExpectationData<F>[],
-    args: any[]): ExpectationData<F> | null
-{
+    args: any[]): ExpectationData<F> | null {
     const argumentMatcherArray: SortedArray<ExpectationData<F>> = new SortedArray((a, b) => {
         if (a === undefined && b === undefined) {
             return 0;
@@ -74,10 +73,16 @@ function verifyArgumentMatcher(expectedArgs: ArgumentMatcher, args: any[]): bool
     return isValid;
 }
 
-function buildExpectationString<F extends MockableFunction>(expectation: ExpectationData<F>) {
+function buildExpectationString<F extends MockableFunction>(expectation: ExpectationData<F>,
+                                                            includeLocation: boolean = true) {
     const mockedFuncName = expectation.internalMocker.mockName || "mock";
+    let argsDescribed: string[] = [];
     if (expectation.expectedArgs === null) {
-        return `${mockedFuncName}() with any arguments`;
+        let argsString = `() with any arguments`;
+        if (includeLocation) {
+            argsString += ` at ${expectation.location}`;
+        }
+        argsDescribed.push(argsString);
     } else {
         const argData: string[] = [];
         for (const argumentValdiatorArg of expectation.expectedArgs) {
@@ -87,16 +92,24 @@ function buildExpectationString<F extends MockableFunction>(expectation: Expecta
                 argData.push(argumentValdiatorArg.toString());
             }
         }
-        return `${mockedFuncName}(${argData.join(", ")}) at ${expectation.location}\n`;
+        let argsString = `(${argData.join(", ")})`;
+        if (includeLocation) {
+            argsString += ` at ${expectation.location}`;
+        }
+
+        argsDescribed.push(argsString);
     }
+
+    return `${mockedFuncName}${argsDescribed.join("\n")}`;
 }
 
 function createMockedFunction<F extends MockableFunction>(): F {
     const mock = (...args: Parameters<F>): ReturnType<F> | null => {
         const internalMocker = GetInternalMocker(mockedFunc);
+        const currentLocation = StacktraceUtils.getCurrentMockLocation(2);
         internalMocker.recordedInvocations.push({
             params: args,
-            location: StacktraceUtils.getCurrentMockLocation(2)
+            location: currentLocation
         });
 
         const expectationData: ExpectationData<F> | null = findBestArgumentMatcher(internalMocker.expectations, args);
@@ -107,8 +120,8 @@ function createMockedFunction<F extends MockableFunction>(): F {
                 if (expectedInvocation !== expectationData) {
                     if (inOrderOverride.currentIndex !== 0) {
                         const expectedInvocationString = buildExpectationString(expectedInvocation);
-                        throw new Error(`Out of order method call. Expected: ${expectedInvocationString}.
-Expected at: ${expectedInvocation.location}`);
+                        throw new Error(`Out of order method call. Expected: ${expectedInvocationString}\n` +
+                            `Actual: ${buildExpectationString(expectationData, false)} at ${currentLocation}`);
                     }
                 } else {
                     if (inOrderOverride.currentIndex === 0) {
@@ -141,7 +154,7 @@ Expected at: ${expectedInvocation.location}`);
         if (internalMocker.options.strictMode === StrictnessMode.Strict) {
             let expectations = "";
             for (const expectation of internalMocker.expectations) {
-                expectations += buildExpectationString(expectation);
+                expectations += buildExpectationString(expectation) + "\n";
             }
             // Unicode space is to trick reporter to have a blank line which seems to call trim()
             expectations = expectations ? ` Expectations:\n${expectations}\u00A0` : "";

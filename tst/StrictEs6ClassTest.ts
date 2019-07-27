@@ -264,7 +264,7 @@ describe("ES6 class strict test cases", () => {
                 mockedTestInterface.method1StringArgNumberReturn(STRING_CALL_PARAM_1);
                 verify(mockedTestInterface);
             } catch (e) {
-                assert.match(e.message, /Out of order method call. Expected: method1StringArgNumberReturn\(\) with any arguments.\nExpected at: .*?StrictEs6ClassTest\.ts:256:74/);
+                assert.match(e.message, /Out of order method call. Expected: method1StringArgNumberReturn\(\) with any arguments at .*?StrictEs6ClassTest\.ts:256:74\nActual: method2StringArgNumberReturn\(\) with any arguments at .*?StrictEs6ClassTest.ts:263:37/);
                 didThrow = true;
             }
 
