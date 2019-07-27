@@ -76,7 +76,7 @@ function verifyArgumentMatcher(expectedArgs: ArgumentMatcher, args: any[]): bool
 function buildExpectationString<F extends MockableFunction>(expectation: ExpectationData<F>,
                                                             includeLocation: boolean = true) {
     const mockedFuncName = expectation.internalMocker.mockName || "mock";
-    let argsDescribed: string[] = [];
+    const argsDescribed: string[] = [];
     if (expectation.expectedArgs === null) {
         let argsString = `() with any arguments`;
         if (includeLocation) {
