@@ -12,11 +12,11 @@
         "preserveConstEnums": true,
         "sourceMap": true,
         "target": "es6",
-        "outDir": "./build/",
+        "outDir": "./build-test/",
         "declaration": true
     },
     "include": [
-        "src/**/*"
+        "tst/**/*"
     ],
     "exclude": [
         "node_modules"

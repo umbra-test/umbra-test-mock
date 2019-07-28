@@ -1,4 +1,4 @@
-import { deepEqual } from "./Utils/DeepEqual";
+import { deepEqual } from "umbra-util";
 
 function any<T>(): T {
     const validator: ArgumentValidator<T> = {
@@ -77,7 +77,7 @@ function matcher<T>(func: (arg: T) => boolean): T {
 interface ArgumentValidator<T> {
 
     /**
-     * Represents the importance of validator compared to other matchers. Higher number means more important, and thus 
+     * Represents the importance of validator compared to other matchers. Higher number means more important, and thus
      * more likely to be matches
      */
     precedence?: number;

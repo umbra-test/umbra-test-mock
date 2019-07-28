@@ -53,4 +53,4 @@ function newCapture<T>(): Capture<T> {
 export {
     Capture,
     newCapture
-}
+};

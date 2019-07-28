@@ -2,14 +2,18 @@
   "name": "umbra-test-mock",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "./build/index.js",
+  "types": "./build/index.d.ts",
   "scripts": {
-    "test": "tsc && mocha --require source-map-support/register --recursive build/tst",
+    "build": "tsc",
+    "test": "tsc -p tsconfig-test.json && mocha --require source-map-support/register --recursive build-test/",
     "lint": "tslint --project ."
   },
   "author": "BuckeyeDude",
   "license": "MIT",
-  "dependencies": {},
+  "dependencies": {
+    "umbra-util": "file:../umbra-util"
+  },
   "devDependencies": {
     "@types/chai": "^4.1.7",
     "@types/mocha": "^5.2.6",

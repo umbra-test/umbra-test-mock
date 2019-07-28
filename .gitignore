@@ -1,4 +1,5 @@
 .nyc_output/*
 build/*
+build-test/*
 coverage/*
 node_modules/*

@@ -1,8 +1,8 @@
+import { SortedArray } from "umbra-util";
 import { ArgumentValidator } from "./ArgumentValidator";
 import { ExpectationData, GetInternalMocker } from "./InternalMocker";
 import { MockableFunction, StrictnessMode } from "./Mock";
 import { StacktraceUtils } from "./StackTraceParser";
-import { SortedArray } from "./Utils/SortedArray";
 
 type ArgumentMatcher = ArgumentValidator<any>[] | null;
 function findBestArgumentMatcher<F extends MockableFunction>(
