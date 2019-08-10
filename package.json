@@ -5,9 +5,11 @@
   "main": "./build/index.js",
   "types": "./build/index.d.ts",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && tsc -p tsconfig-test.json",
+    "watch-build": "(tsc -w &) && (tsc -w -p tsconfig-test.json)",
     "test": "tsc -p tsconfig-test.json && mocha --require source-map-support/register --recursive build-test/",
-    "lint": "tslint --project ."
+    "lint": "tslint --project .",
+    "all": "npm run build && npm run test && npm run lint"
   },
   "author": "BuckeyeDude",
   "license": "MIT",

@@ -54,6 +54,9 @@ function findBestArgumentMatcher<F extends MockableFunction>(
         argumentMatcherArray.insert(expectation);
     }
     for (const expectation of argumentMatcherArray.getData()) {
+        if (expectation.callCount >= expectation.expectedRange.end) {
+            continue;
+        }
         const expectedArgs = expectation.expectedArgs;
         const isValid = verifyArgumentMatcher(expectedArgs, args);
         if (isValid) {
@@ -99,13 +102,9 @@ function verifyArgumentMatcher(expectedArgs: ArgumentMatcher, args: any[]): bool
 function buildExpectationString<F extends MockableFunction>(expectation: ExpectationData<F>,
                                                             includeLocation: boolean = true) {
     const mockedFuncName = expectation.internalMocker.mockName || "mock";
-    const argsDescribed: string[] = [];
+    let argsString = `\t${mockedFuncName}`;
     if (expectation.expectedArgs === null) {
-        let argsString = `() with any arguments`;
-        if (includeLocation) {
-            argsString += ` at ${expectation.location}`;
-        }
-        argsDescribed.push(argsString);
+        argsString += `() with any arguments`;
     } else {
         const argData: string[] = [];
         for (const argumentValdiatorArg of expectation.expectedArgs) {
@@ -115,15 +114,16 @@ function buildExpectationString<F extends MockableFunction>(expectation: Expecta
                 argData.push(argumentValdiatorArg.toString());
             }
         }
-        let argsString = `(${argData.join(", ")})`;
-        if (includeLocation) {
-            argsString += ` at ${expectation.location}`;
-        }
-
-        argsDescribed.push(argsString);
+        argsString += `(${argData.join(", ")})`;
     }
 
-    return `${mockedFuncName}${argsDescribed.join("\n")}`;
+    argsString += `. ${expectation.expectedRange.describeRange()}, so far ${expectation.callCount}.`;
+
+    if (includeLocation) {
+        argsString += `\n\tExpectation set at ${expectation.location}`;
+    }
+
+    return argsString + "\n";
 }
 
 function createMockedFunction<F extends MockableFunction>(): F {
@@ -143,8 +143,9 @@ function createMockedFunction<F extends MockableFunction>(): F {
                 if (expectedInvocation !== expectationData) {
                     if (inOrderOverride.currentIndex !== 0) {
                         const expectedInvocationString = buildExpectationString(expectedInvocation);
-                        throw new Error(`Out of order method call. Expected: ${expectedInvocationString}\n` +
-                            `Actual: ${buildExpectationString(expectationData, false)} at ${currentLocation}`);
+                        throw new Error(`Out of order method call.\nExpected:\n${expectedInvocationString}\n` +
+                            `Actual:\n${buildExpectationString(expectationData, false)}` +
+                            `\tExpectation set at ${currentLocation}`);
                     }
                 } else {
                     if (inOrderOverride.currentIndex === 0) {
@@ -179,8 +180,8 @@ function createMockedFunction<F extends MockableFunction>(): F {
             for (const expectation of internalMocker.expectations) {
                 expectations += buildExpectationString(expectation) + "\n";
             }
-            // Unicode space is to trick reporter to have a blank line which seems to call trim()
-            expectations = expectations ? ` Expectations:\n${expectations}\u00A0` : "";
+            // Unicode space is to trick mocha reporter to have a blank line which seems to call trim()
+            expectations = expectations ? `\nExpectations:\n${expectations}\u00A0` : "";
             const wording = internalMocker.expectations.length > 0 ? "matched" : "was set";
             const argsStringified: string[] = [];
             for (const arg of args) {

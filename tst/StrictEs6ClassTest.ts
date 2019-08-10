@@ -77,6 +77,24 @@ describe("ES6 class strict test cases", () => {
             assert.equal(didThrow, true);
         });
 
+        it("should throw if the expectation already matched its count", () => {
+            const mockedTestInterface = mock(TestClass);
+
+            expect(mockedTestInterface.method1StringArgNumberReturn).once();
+
+            mockedTestInterface.method1StringArgNumberReturn(STRING_CALL_PARAM_1);
+
+            let didThrow = false;
+            try {
+                mockedTestInterface.method1StringArgNumberReturn(STRING_CALL_PARAM_1);
+            } catch (e) {
+                didThrow = true;
+                assert.match(e.message, /method1StringArgNumberReturn\("callParam1"\) was called but no expectation matched.\nExpectations:\n\tmethod1StringArgNumberReturn\(\) with any arguments. Expected 1 invocations, so far 1.\n\tExpectation set at .*?StrictEs6ClassTest.ts:83:13/);
+            }
+
+            assert.equal(didThrow, true);
+        });
+
         it("should fail if no expectation matches and print the expectations", () => {
             const mockedTestInterface = mock(TestClass);
 
@@ -88,7 +106,7 @@ describe("ES6 class strict test cases", () => {
                 mockedTestInterface.method1StringArgNumberReturn(STRING_CALL_PARAM_1);
             } catch (e) {
                 didThrow = true;
-                assert.match(e.message, /method1StringArgNumberReturn\("callParam1"\) was called but no expectation matched. Expectations:\nmethod1StringArgNumberReturn\("randoString"\) at .*?StrictEs6ClassTest\.ts:83:13\nmethod1StringArgNumberReturn\("callPraam1"\) at .*?StrictEs6ClassTest\.ts:84:13\n/);
+                assert.match(e.message, /method1StringArgNumberReturn\("callParam1"\) was called but no expectation matched.\nExpectations:\n\tmethod1StringArgNumberReturn\("randoString"\). Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictEs6ClassTest\.ts:101:13\n\n\tmethod1StringArgNumberReturn\("callPraam1"\). Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictEs6ClassTest\.ts:102:13\n/);
             }
 
             assert.equal(didThrow, true);
@@ -104,7 +122,7 @@ describe("ES6 class strict test cases", () => {
                 verify(mockedTestInterface);
             } catch (e) {
                 didThrow = true;
-                assert.match(e.message, /Expected 1 invocations, got 0\.\nExpected at: .*?StrictEs6ClassTest\.ts:100:13/);
+                assert.match(e.message, /Expected 1 invocations, got 0\.\nExpected at: .*?StrictEs6ClassTest\.ts:118:13/);
             }
 
             assert.equal(didThrow, true);
@@ -144,7 +162,7 @@ describe("ES6 class strict test cases", () => {
                 verify(mockedTestInterface);
             } catch (e) {
                 didThrow = true;
-                assert.match(e.message, /Expected 3 invocations, got 2.\nExpected at: .*?StrictEs6ClassTest\.ts:137:99\nCalled at:\n.*?StrictEs6ClassTest\.ts:139:46\n.*?StrictEs6ClassTest\.ts:140:46\n/);
+                assert.match(e.message, /Expected 3 invocations, got 2.\nExpected at: .*?StrictEs6ClassTest\.ts:155:13\nCalled at:\n.*?StrictEs6ClassTest\.ts:157:46\n.*?StrictEs6ClassTest\.ts:158:46\n/);
             }
 
             assert.equal(didThrow, true);
@@ -264,7 +282,7 @@ describe("ES6 class strict test cases", () => {
                 mockedTestInterface.method1StringArgNumberReturn(STRING_CALL_PARAM_1);
                 verify(mockedTestInterface);
             } catch (e) {
-                assert.match(e.message, /Out of order method call. Expected: method1StringArgNumberReturn\(\) with any arguments at .*?StrictEs6ClassTest\.ts:256:74\nActual: method2StringArgNumberReturn\(\) with any arguments at .*?StrictEs6ClassTest.ts:263:37/);
+                assert.match(e.message, /Out of order method call.\nExpected:\n\tmethod1StringArgNumberReturn\(\) with any arguments. Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictEs6ClassTest\.ts:274:17\n\nActual:\n\tmethod2StringArgNumberReturn\(\) with any arguments. Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictEs6ClassTest.ts:281:37/);
                 didThrow = true;
             }
 

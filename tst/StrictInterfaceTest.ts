@@ -87,7 +87,7 @@ describe("Interface test cases", () => {
                 mockedFunction("noMatch");
             } catch (e) {
                 didThrow = true;
-                assert.match(e.message, /mock\("noMatch"\) was called but no expectation matched. Expectations:\nmock\("arg"\) at .*?StrictInterfaceTest.ts:82:13\nmock\(\) at .*?StrictInterfaceTest.ts:83:13\n/)
+                assert.match(e.message, /mock\("noMatch"\) was called but no expectation matched.\nExpectations:\n\tmock\("arg"\). Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictInterfaceTest.ts:82:13\n\n\tmock\(\). Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictInterfaceTest.ts:83:13\n/)
             }
 
             assert.equal(true, didThrow);

@@ -15,7 +15,7 @@ npm install --save-dev umbra-mock
 Note: Your runtime environment must be ES5 compatible, and must have an ES6 Proxy implementation available globally. For Node this means you must be using Node 6 or greater
 
 To declare a mock:
-```typescript
+```ts
 interface SomeObject {
     run(): void;
 }
@@ -23,14 +23,14 @@ const someObject: SomeObject = mock<SomeObject>();
 ```
 
 To set expectations:
-```typescript
+```ts
 expect(someObject.run).once();
 ```
 
 ## Umbra In Depth
 ### Basic example
 Imagine we have this code for itereating over a list of items
-```typescript
+```ts
 type Callback<T> = (item: T) => void;
 function forEach<T>(items: T[], callback: Callback<T>) {
     for (let index = 0; index < items.length; index++) {
@@ -39,7 +39,7 @@ function forEach<T>(items: T[], callback: Callback<T>) {
 }
 ```
 The most basic test case for this would look like this:
-```typescript
+```ts
 import { describe, expect, inOrder, it, mock } from "umbra";
 
 describe("forEach", () => {
@@ -78,13 +78,13 @@ This is intentionally different from most mocking frameworks which are "loose" b
 
 Also note in this example we use the `inOrder` function to ensure the list is invoked in the same order as the list. This is because by default Umbra mocks do not assume ordering and may execute in any order. This is often helpful in testing code after it has been refactored. For example lets say we have this code:
 
-```typescript
+```ts
 
 ```
 ### Matchers
 Often you might not want to specify the exact argument for the mock. In cases of ambiguity like this you can use matchers to match multiple cases. For example:
 
-```typescript
+```ts
 type Callback<T> = (item1: T, item2: T) => void;
 const callback: Callback<number> = mock();
 expect(callback).withArgs(0, any()).once();
@@ -92,20 +92,28 @@ expect(callback).withArgs(0, any()).once();
 ```
 
 Matchers are given lower precedence than more specific arguments, regardless of ordering. For example:
-```typescript
+```ts
 type Callback<T> = (item1: T, item2: T) => number;
 const callback: Callback<number> = mock();
 expect(callback).withArgs(0, any()).andReturn(1).once();
 expect(callback).withArgs(0, 1).andReturn(0).once();
 // callback(0, 1) will return 0
 // callback(0, 0) will return 1
+```
 
+If a match is ambiguous then it falls back to the ordering of the expectations.
+```ts
+type Callback<T> = (item1: T, item2: T) => number;
+const callback: Callback<number> = mock();
+expect(callback).withArgs(0, any()).andReturn(1).once();
+expect(callback).withArgs(any(), 1).andReturn(0).once();
+// callback(0, 1) will return 1 the first time, 0 the second time
 ```
 
 ### Capturing arguments
 Many times you may need access to once of the values pass to your mock function. A common example is a callback, or an event listener of some kind. To gain access to this value you use a `Capture`. For example:
 
-```typescript
+```ts
 type Callback = () => void;
 type CallbackTakingFunction = (callback: Callback) => void;
 

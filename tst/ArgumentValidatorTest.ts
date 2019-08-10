@@ -230,6 +230,17 @@ describe("Argument validator test cases", () => {
 
             verify(mockedTestInterface);
         });
+
+        it("Equal precedence matchers fall back to ordering", () => {
+            const mockedTestInterface = mock(TestClass);
+
+            expect(mockedTestInterface.method2StringOptionalArgNumberReturn).withArgs(any(), "0").andStubReturn(0);
+            expect(mockedTestInterface.method2StringOptionalArgNumberReturn).withArgs("1", any()).andStubReturn(1);
+
+            assert.equal(mockedTestInterface.method2StringOptionalArgNumberReturn("1", "0"), 0);
+
+            verify(mockedTestInterface);
+        });
     })
 
 });

@@ -1,10 +1,10 @@
 import { Answer, InOrderExpectation, MockableFunction, MockOptions } from "./Mock";
 import { ArgumentMatcher } from "./MockedFunction";
-import { Verifier } from "./Verify";
+import { Range } from "./Range";
 
 interface ExpectationData<F extends MockableFunction> {
     internalMocker: InternalMocker<F>;
-    verifier: Verifier<any>;
+    expectedRange: Range;
     location: string | null;
     expectedArgs: ArgumentMatcher;
     answer: Answer<F> | null;

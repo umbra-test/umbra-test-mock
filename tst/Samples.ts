@@ -46,6 +46,7 @@ describe("Samples", () => {
     });
 
     describe("matchers", () => {
+
         it("matches with any", () => {
             type Callback<T> = (item1: T, item2: T) => number;
             const callback: Callback<number> = mock();
@@ -54,7 +55,18 @@ describe("Samples", () => {
 
             assert.equal(callback(0, 1), 0);
             assert.equal(callback(0, 0), 1);
-        })
+        });
+
+        it("falls back ordering", () => {
+            type Callback<T> = (item1: T, item2: T) => number;
+            const callback: Callback<number> = mock();
+            expect(callback).withArgs(0, any()).andReturn(1).once();
+            expect(callback).withArgs(any(), 1).andReturn(0).once();
+
+            assert.equal(callback(0, 1), 1);
+            assert.equal(callback(0, 1), 0);
+        });
+        
     });
 
 });
