@@ -1,4 +1,4 @@
-import { expect, inOrder, mock, verify, any  } from "../src";
+import { expect, inOrder, mock, verify, any  } from "../src/index";
 import { assert } from "chai";
 
 type Callback<T> = (item: T) => void;
