@@ -1,4 +1,4 @@
-import { ArgumentValidator } from "./ArgumentValidator";
+import { ArgumentValidator } from "umbra-util/src/ArgumentValidator";
 
 interface Capture<T> {
     first: T | null;

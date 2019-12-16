@@ -1,5 +1,5 @@
-import { mock, verify, expect, spy, any, inOrder } from "../src/index";
-import { assert } from "chai";
+import { mock, verify, expect, spy, any, inOrder } from "..";
+import { assert } from "umbra-assert";
 import { TestClass, REAL_NUMBER_RETURN_VALUE } from "./TestClass";
 import "mocha";
 
@@ -89,7 +89,7 @@ describe("ES6 class strict test cases", () => {
                 mockedTestInterface.method1StringArgNumberReturn(STRING_CALL_PARAM_1);
             } catch (e) {
                 didThrow = true;
-                assert.match(e.message, /method1StringArgNumberReturn\("callParam1"\) was called but no expectation matched.\nExpectations:\n\tmethod1StringArgNumberReturn\(\) with any arguments. Expected 1 invocations, so far 1.\n\tExpectation set at .*?StrictEs6ClassTest.ts:83:13/);
+                assert.regexMatches(e.message, /method1StringArgNumberReturn\("callParam1"\) was called but no expectation matched.\nExpectations:\n\tmethod1StringArgNumberReturn\(\) with any arguments. Expected 1 invocations, so far 1.\n\tExpectation set at .*?StrictEs6ClassTest.ts:83:13/);
             }
 
             assert.equal(didThrow, true);
@@ -106,7 +106,7 @@ describe("ES6 class strict test cases", () => {
                 mockedTestInterface.method1StringArgNumberReturn(STRING_CALL_PARAM_1);
             } catch (e) {
                 didThrow = true;
-                assert.match(e.message, /method1StringArgNumberReturn\("callParam1"\) was called but no expectation matched.\nExpectations:\n\tmethod1StringArgNumberReturn\("randoString"\). Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictEs6ClassTest\.ts:101:13\n\n\tmethod1StringArgNumberReturn\("callPraam1"\). Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictEs6ClassTest\.ts:102:13\n/);
+                assert.regexMatches(e.message, /method1StringArgNumberReturn\("callParam1"\) was called but no expectation matched.\nExpectations:\n\tmethod1StringArgNumberReturn\("randoString"\). Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictEs6ClassTest\.ts:101:13\n\n\tmethod1StringArgNumberReturn\("callPraam1"\). Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictEs6ClassTest\.ts:102:13\n/);
             }
 
             assert.equal(didThrow, true);
@@ -122,7 +122,7 @@ describe("ES6 class strict test cases", () => {
                 verify(mockedTestInterface);
             } catch (e) {
                 didThrow = true;
-                assert.match(e.message, /Expected 1 invocations, got 0\.\nExpected at: .*?StrictEs6ClassTest\.ts:118:13/);
+                assert.regexMatches(e.message, /Expected 1 invocations, got 0\.\nExpected at: .*?StrictEs6ClassTest\.ts:118:13/);
             }
 
             assert.equal(didThrow, true);
@@ -162,7 +162,7 @@ describe("ES6 class strict test cases", () => {
                 verify(mockedTestInterface);
             } catch (e) {
                 didThrow = true;
-                assert.match(e.message, /Expected 3 invocations, got 2.\nExpected at: .*?StrictEs6ClassTest\.ts:155:13\nCalled at:\n.*?StrictEs6ClassTest\.ts:157:46\n.*?StrictEs6ClassTest\.ts:158:46\n/);
+                assert.regexMatches(e.message, /Expected 3 invocations, got 2.\nExpected at: .*?StrictEs6ClassTest\.ts:155:13\nCalled at:\n.*?StrictEs6ClassTest\.ts:157:46\n.*?StrictEs6ClassTest\.ts:158:46\n/);
             }
 
             assert.equal(didThrow, true);
@@ -259,7 +259,7 @@ describe("ES6 class strict test cases", () => {
                 mockedTestInterface.method1NumberArgNumberReturn(NUMBER_CALL_PARAM_1);
                 verify(mockedTestInterface);
             } catch (e) {
-                assert.match(e.message, /Out of order method call. Expected: method1NumberArgNumberReturn\(\) with any arguments.\nExpected at: .*?StrictEs6ClassTest\.ts:232:74/);
+                assert.regexMatches(e.message, /Out of order method call. Expected: method1NumberArgNumberReturn\(\) with any arguments.\nExpected at: .*?StrictEs6ClassTest\.ts:232:74/);
                 didThrow = true;
             }
 
@@ -282,7 +282,7 @@ describe("ES6 class strict test cases", () => {
                 mockedTestInterface.method1StringArgNumberReturn(STRING_CALL_PARAM_1);
                 verify(mockedTestInterface);
             } catch (e) {
-                assert.match(e.message, /Out of order method call.\nExpected:\n\tmethod1StringArgNumberReturn\(\) with any arguments. Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictEs6ClassTest\.ts:274:17\n\nActual:\n\tmethod2StringArgNumberReturn\(\) with any arguments. Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictEs6ClassTest.ts:281:37/);
+                assert.regexMatches(e.message, /Out of order method call.\nExpected:\n\tmethod1StringArgNumberReturn\(\) with any arguments. Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictEs6ClassTest\.ts:274:17\n\nActual:\n\tmethod2StringArgNumberReturn\(\) with any arguments. Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictEs6ClassTest.ts:281:37/);
                 didThrow = true;
             }
 

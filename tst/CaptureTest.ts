@@ -1,6 +1,6 @@
-import { mock, expect, verify, newCapture, Capture } from "../src/index";
+import { mock, expect, verify, newCapture, Capture } from "..";
 import { TestClass } from "./TestClass";
-import { assert } from "chai";
+import { assert } from "umbra-assert";
 import "mocha";
 
 describe("Capture test cases", () => {
@@ -41,25 +41,25 @@ describe("Capture test cases", () => {
 
             assert.equal(argCapture.last, null);
             assert.equal(argCapture.first, null);
-            assert.deepEqual(argCapture.all, []);
+            assert.equal(argCapture.all, []);
 
             mockedTestInterface.method1StringArgNumberReturn("0");
 
             assert.equal(argCapture.last, "0");
             assert.equal(argCapture.first, "0");
-            assert.deepEqual(argCapture.all, ["0"]);
+            assert.equal(argCapture.all, ["0"]);
 
             mockedTestInterface.method1StringArgNumberReturn("1");
 
             assert.equal(argCapture.last, "1");
             assert.equal(argCapture.first, "0");
-            assert.deepEqual(argCapture.all, ["0", "1"]);
+            assert.equal(argCapture.all, ["0", "1"]);
 
             mockedTestInterface.method1StringArgNumberReturn("2");
 
             assert.equal(argCapture.last, "2");
             assert.equal(argCapture.first, "0");
-            assert.deepEqual(argCapture.all, ["0", "1", "2"]);
+            assert.equal(argCapture.all, ["0", "1", "2"]);
 
             verify(mockedTestInterface);
         });
@@ -79,37 +79,37 @@ describe("Capture test cases", () => {
 
             assert.equal(arg1Capture.last, null);
             assert.equal(arg1Capture.first, null);
-            assert.deepEqual(arg1Capture.all, []);
+            assert.equal(arg1Capture.all, []);
             assert.equal(arg2Capture.last, null);
             assert.equal(arg2Capture.first, null);
-            assert.deepEqual(arg2Capture.all, []);
+            assert.equal(arg2Capture.all, []);
 
             mockedTestInterface.method2StringArgNumberReturn("0", "0");
 
             assert.equal(arg1Capture.last, "0");
             assert.equal(arg1Capture.first, "0");
-            assert.deepEqual(arg1Capture.all, ["0"]);
+            assert.equal(arg1Capture.all, ["0"]);
             assert.equal(arg2Capture.last, "0");
             assert.equal(arg2Capture.first, "0");
-            assert.deepEqual(arg2Capture.all, ["0"]);
+            assert.equal(arg2Capture.all, ["0"]);
 
             mockedTestInterface.method2StringArgNumberReturn("1", "-1");
 
             assert.equal(arg1Capture.last, "1");
             assert.equal(arg1Capture.first, "0");
-            assert.deepEqual(arg1Capture.all, ["0", "1"]);
+            assert.equal(arg1Capture.all, ["0", "1"]);
             assert.equal(arg2Capture.last, "-1");
             assert.equal(arg2Capture.first, "0");
-            assert.deepEqual(arg2Capture.all, ["0", "-1"]);
+            assert.equal(arg2Capture.all, ["0", "-1"]);
 
             mockedTestInterface.method2StringArgNumberReturn("2", "-2");
 
             assert.equal(arg1Capture.last, "2");
             assert.equal(arg1Capture.first, "0");
-            assert.deepEqual(arg1Capture.all, ["0", "1", "2"]);
+            assert.equal(arg1Capture.all, ["0", "1", "2"]);
             assert.equal(arg2Capture.last, "-2");
             assert.equal(arg2Capture.first, "0");
-            assert.deepEqual(arg2Capture.all, ["0", "-1", "-2"]);
+            assert.equal(arg2Capture.all, ["0", "-1", "-2"]);
 
             verify(mockedTestInterface);
         });

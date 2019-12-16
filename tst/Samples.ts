@@ -1,5 +1,5 @@
-import { expect, inOrder, mock, verify, any  } from "../src/index";
-import { assert } from "chai";
+import { expect, inOrder, mock, verify, any  } from "..";
+import { assert } from "umbra-assert";
 
 type Callback<T> = (item: T) => void;
 function forEach<T>(items: T[], callback: Callback<T>) {

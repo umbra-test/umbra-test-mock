@@ -1,6 +1,6 @@
 import { TaskRunner } from "./TaskRunner";
 import { Task, AsyncTask } from "./Task";
-import { mock, verify, expect, spy, inOrder } from "../../src/index";
+import { mock, verify, expect, inOrder } from "../..";
 import { assert } from "chai";
 
 type OnTaskStart = (taskName: string, taskDependencies: string[]) => void;

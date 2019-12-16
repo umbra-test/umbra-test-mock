@@ -1,6 +1,7 @@
-import { mock, expect, any, matcher, gt, gte, lt, lte, startsWith, regexMatches, verify } from "../src/index";
+import { mock, expect, verify } from ".."
+import { any, matcher, gt, gte, lt, lte, startsWith, regexMatches } from "umbra-util";
 import { TestClass } from "./TestClass";
-import { assert } from "chai";
+import { assert } from "umbra-assert";
 import "mocha";
 
 describe("Argument validator test cases", () => {
@@ -48,7 +49,7 @@ describe("Argument validator test cases", () => {
             expect(mockedTestInterface.method1AnyArgNumberReturn).withArgs(any()).andStubReturn(0);
             expect(mockedTestInterface.method1AnyArgNumberReturn).andStubReturn(-1);
 
-            for (let val of ["0", "1", null, undefined, "", 0, 1, {}, { "object": true }]) {
+            for (let val of ["0", "1", null, undefined, "", 0, 1, {}, { "object": true }, true, false, function () { }]) {
                 assert.equal(mockedTestInterface.method1AnyArgNumberReturn(val), 0);
             }
 

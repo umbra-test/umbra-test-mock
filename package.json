@@ -14,16 +14,17 @@
   "author": "BuckeyeDude",
   "license": "MIT",
   "dependencies": {
-    "umbra-util": "file:../umbra-util"
+    "umbra-util": "^1.0.0"
   },
   "devDependencies": {
     "@types/chai": "^4.1.7",
-    "@types/mocha": "^5.2.6",
+    "@types/mocha": "^5.2.7",
     "@types/source-map-support": "^0.5.0",
     "chai": "^4.2.0",
     "mocha": "^5.2.0",
     "source-map-support": "^0.5.11",
     "tslint": "^5.14.0",
-    "typescript": "^3.5.3"
+    "typescript": "^3.5.3",
+    "umbra-assert": "^1.0.0"
   }
 }
