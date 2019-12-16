@@ -60,7 +60,7 @@ class InvocationHandler<T extends object> implements ProxyHandler<T> {
         }
         if (!this.cachedStubs[p]) {
             const mockedFunction: F = createMockedFunction();
-            const mockName: string = this.mockName !== null ? this.mockName : p.toString();
+            const mockName: string = this.mockName !== null ? `${this.mockName}.${p.toString()}` : p.toString();
             Object.defineProperty(mockedFunction, "name", { value: mockName });
             const internalMocker = CreateInternalMocker<F>(mockedFunction, (target as any)[p], mockName, this.options);
             if (internalMocker.isInExpectation) {

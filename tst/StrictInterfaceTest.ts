@@ -44,6 +44,55 @@ describe("Interface test cases", () => {
     });
 
     describe("BasicFunction", () => {
+        it("supports named mock in expectation error messages", () => {
+            const mockedFunction = mock<TestFunctionWithOptionalString>("mockedFunction");
+
+            expect(mockedFunction).withArgs("").andReturn(MOCK_RETURN_VAL);
+
+            let didThrow = true;
+            try {
+                assert.equal(MOCK_RETURN_VAL, mockedFunction());
+            } catch (e) {
+                assert.regexMatches(e.message, /mockedFunction\(\) was called but no expectation matched.\nExpectations:\n\tmockedFunction\(""\). Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictInterfaceTest.ts:50:13/);
+                didThrow = true;
+            }
+
+            assert.equal(true, didThrow);
+        });
+
+        it("should throw if no args match with optional args", () => {
+            const mockedFunction = mock<TestFunctionWithOptionalString>();
+
+            expect(mockedFunction).withArgs("arg").andReturn(MOCK_RETURN_VAL);
+            expect(mockedFunction).withArgs().andReturn(MOCK_RETURN_VAL + 1);
+
+            let didThrow = false;
+            try {
+                mockedFunction("noMatch");
+            } catch (e) {
+                didThrow = true;
+                assert.regexMatches(e.message, /mock\("noMatch"\) was called but no expectation matched.\nExpectations:\n\tmock\("arg"\). Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictInterfaceTest.ts:66:13\n\n\tmock\(\). Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictInterfaceTest.ts:67:13\n/)
+            }
+
+            assert.equal(true, didThrow);
+        });
+
+        it("supports named mock in verify error messages", () => {
+            const mockedFunction = mock<TestFunctionWithOptionalString>("mockedFunction");
+
+            expect(mockedFunction).withArgs("").andReturn(MOCK_RETURN_VAL);
+
+            let didThrow = true;
+            try {
+                verify(mockedFunction);
+            } catch (e) {
+                assert.regexMatches(e.message, /Expected 1 invocations, got 0\.\n.*?StrictInterfaceTest.ts:83:13/);
+                didThrow = true;
+            }
+
+            assert.equal(true, didThrow);
+        });
+
         it("should return mock value", () => {
             const mockedTestInterface = mock<TestFunction>();
 
@@ -74,23 +123,6 @@ describe("Interface test cases", () => {
             assert.equal(MOCK_RETURN_VAL + 1, mockedFunction());
 
             verify(mockedFunction);
-        });
-
-        it("should throw if no args match with optional args", () => {
-            const mockedFunction = mock<TestFunctionWithOptionalString>();
-
-            expect(mockedFunction).withArgs("arg").andReturn(MOCK_RETURN_VAL);
-            expect(mockedFunction).withArgs().andReturn(MOCK_RETURN_VAL + 1);
-
-            let didThrow = false;
-            try {
-                mockedFunction("noMatch");
-            } catch (e) {
-                didThrow = true;
-                assert.regexMatches(e.message, /mock\("noMatch"\) was called but no expectation matched.\nExpectations:\n\tmock\("arg"\). Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictInterfaceTest.ts:82:13\n\n\tmock\(\). Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictInterfaceTest.ts:83:13\n/)
-            }
-
-            assert.equal(true, didThrow);
         });
 
         it("resolves a promise when specified", () => {

@@ -99,8 +99,12 @@ function verifyArgumentMatcher(expectedArgs: ArgumentMatcher, args: any[]): bool
     return isValid;
 }
 
-function buildExpectationString<F extends MockableFunction>(expectation: ExpectationData<F>,
-                                                            includeLocation: boolean = true) {
+interface ExpectationOptions {
+    includeLocation: boolean;
+}
+
+const defaultExpectationOptions: ExpectationOptions = { includeLocation: true };
+function buildExpectationString<F extends MockableFunction>(expectation: ExpectationData<F>, options: ExpectationOptions = defaultExpectationOptions) {
     const mockedFuncName = expectation.internalMocker.mockName || "mock";
     let argsString = `\t${mockedFuncName}`;
     if (expectation.expectedArgs === null) {
@@ -117,9 +121,9 @@ function buildExpectationString<F extends MockableFunction>(expectation: Expecta
         argsString += `(${argData.join(", ")})`;
     }
 
-    argsString += `. ${expectation.expectedRange.describeRange()}, so far ${expectation.callCount}.`;
+    argsString += `. Expected ${expectation.expectedRange.describeRange()}, so far ${expectation.callCount}.`;
 
-    if (includeLocation) {
+    if (options.includeLocation) {
         argsString += `\n\tExpectation set at ${expectation.location}`;
     }
 
@@ -141,12 +145,10 @@ function createMockedFunction<F extends MockableFunction>(): F {
                 const inOrderOverride = expectationData.inOrderOverride;
                 const expectedInvocation = inOrderOverride.expectations[inOrderOverride.currentIndex];
                 if (expectedInvocation !== expectationData) {
-                    if (inOrderOverride.currentIndex !== 0) {
-                        const expectedInvocationString = buildExpectationString(expectedInvocation);
-                        throw new Error(`Out of order method call.\nExpected:\n${expectedInvocationString}\n` +
-                            `Actual:\n${buildExpectationString(expectationData, false)}` +
-                            `\tExpectation set at ${currentLocation}`);
-                    }
+                    const expectedInvocationString = buildExpectationString(expectedInvocation);
+                    throw new Error(`Out of order method call.\nExpected:\n${expectedInvocationString}\n` +
+                        `Actual:\n${buildExpectationString(expectationData, { includeLocation: false })}` +
+                        `\tCalled at ${currentLocation}`);
                 } else {
                     if (inOrderOverride.currentIndex === 0) {
                         internalMocker.inProgressInOrder.push(inOrderOverride);

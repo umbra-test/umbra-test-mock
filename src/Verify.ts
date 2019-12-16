@@ -48,7 +48,7 @@ function buildErrorMessage<F extends MockableFunction>(args: RecordedInvocation<
 }
 
 function buildRangeMessage(range: Range, callCount: number): string {
-    return `${range.describeRange()}, got ${callCount}.`;
+    return `Expected ${range.describeRange()}, got ${callCount}.`;
 }
 
 function buildCallLocations<F extends MockableFunction>(expectedArgs: ArgumentMatcher,

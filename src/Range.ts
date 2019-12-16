@@ -3,16 +3,16 @@ class Range {
     public readonly end: number;
 
     public constructor(start: number, end: number = start) {
-        if (start > end) {
-            throw new Error("minimum must be <= maximum");
-        }
-
         if (start < 0) {
-            throw new Error("minimum must be >= 0");
+            throw new Error(`Start value must be >= 0. Received ${start}`);
         }
 
         if (end < 1) {
-            throw Error("maximum must be >= 1");
+            throw Error(`End value must be >= 1. Received ${end}`);
+        }
+
+        if (start > end) {
+            throw new Error(`Start must be <= end. Start: ${start} End: ${end}`);
         }
 
         this.start = start;
@@ -28,18 +28,18 @@ class Range {
     }
 
     public hasNoUpperBound(): boolean {
-        return this.start === Number.MAX_SAFE_INTEGER;
+        return this.end === Number.MAX_SAFE_INTEGER;
     }
 
     public describeRange() {
         if (this.isFixedRange()) {
-            return `Expected ${this.start} invocations`;
+            return `${this.start} invocations`;
         }
         if (this.hasNoUpperBound()) {
-            return `Expected at least ${this.start} invocations`;
+            return `at least ${this.start} invocations`;
         }
 
-        return `Expected between ${this.start} and ${this.end} invocations`;
+        return `between ${this.start} and ${this.end} invocations`;
     }
 }
 

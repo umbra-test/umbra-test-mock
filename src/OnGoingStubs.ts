@@ -29,6 +29,8 @@ interface OngoingStubbing<F extends MockableFunction> {
 
     atLeast(atLeastInvocations: number): OngoingStubbing<F>;
 
+    atMost(atMostInvocations: number): OngoingStubbing<F>;
+
     once(): OngoingStubbing<F>;
 
     twice(): OngoingStubbing<F>;

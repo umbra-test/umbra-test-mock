@@ -1,4 +1,4 @@
-import { mock, expect, verify } from ".."
+import { mock, expect, verify, spy } from ".."
 import { any, matcher, gt, gte, lt, lte, startsWith, regexMatches } from "umbra-util";
 import { TestClass } from "./TestClass";
 import { assert } from "umbra-assert";

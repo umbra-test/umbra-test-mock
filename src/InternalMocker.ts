@@ -38,7 +38,7 @@ const INTERNAL_MOCKER_NAME = "__internalMocker";
 function GetInternalMocker<F extends MockableFunction>(mock: F): InternalMocker<F> {
     const internalMocker: InternalMocker<F> = (mock as any)[INTERNAL_MOCKER_NAME];
     if (!internalMocker) {
-        throw new Error(`Passed an object that was not a mock. Object: ${JSON.stringify(mock)}`);
+        throw new Error(`Passed an object that was not a mock. Object: ${mock.toString()}`);
     }
 
     return internalMocker;
