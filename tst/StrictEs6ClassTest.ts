@@ -260,12 +260,26 @@ describe("ES6 class strict test cases", () => {
         });
 
         
-        it("should throw if atMost value is less than atLeast", () => {
+        it("should throw if atMost value is less than atLeast, atMost first", () => {
             const mockedTestInterface = mock(TestClass);
 
             let didThrow = false;
             try {
                 expect(mockedTestInterface.method1StringArgNumberReturn).andReturn(MOCK_RETURN_VALUE).atMost(1).atLeast(2);
+            } catch (e) {
+                didThrow = true;
+                assert.regexMatches(e.message, /Start must be <= end. Start: 2 End: 1/);
+            }
+
+            assert.equal(didThrow, true);
+        });
+
+        it("should throw if atMost value is less than atLeast, atLeast first", () => {
+            const mockedTestInterface = mock(TestClass);
+
+            let didThrow = false;
+            try {
+                expect(mockedTestInterface.method1StringArgNumberReturn).andReturn(MOCK_RETURN_VALUE).atLeast(2).atMost(1);
             } catch (e) {
                 didThrow = true;
                 assert.regexMatches(e.message, /Start must be <= end. Start: 2 End: 1/);
@@ -432,6 +446,8 @@ describe("ES6 class strict test cases", () => {
             } catch (e) {
                 didThrow = true;
             }
+
+            assert.equal(true, didThrow);
         });
 
         it("should throw when invalid method expection is set", () => {
@@ -548,6 +564,25 @@ describe("ES6 class strict test cases", () => {
             mockedTestInterface.method1StringArgNumberReturn(STRING_CALL_PARAM_1);
             
             verify(mockedTestInterface);
+        });
+
+        
+        it("should throw an exception when using `andThrow`", () => {
+            const mockedTestInterface = mock(TestClass);
+
+            const exception = new Error("Test error");
+            expect(mockedTestInterface.method1StringArgNumberReturn).andThrow(exception);
+
+            let didThrow = false;
+            try {
+                mockedTestInterface.method1StringArgNumberReturn(STRING_CALL_PARAM_1);
+            } catch (e) {
+                assert.equal(exception, e);
+                didThrow = true;
+            }
+
+            assert.equal(true, didThrow);
+            verify();
         });
 
         it("should verify atLeast expectation", () => {

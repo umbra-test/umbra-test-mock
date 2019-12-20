@@ -7,8 +7,9 @@
   "scripts": {
     "build": "tsc && tsc -p tsconfig-test.json",
     "watch-build": "(tsc -w &) && (tsc -w -p tsconfig-test.json)",
-    "test": "tsc -p tsconfig-test.json && mocha --require source-map-support/register --recursive build-test/",
+    "test": "mocha --require source-map-support/register --recursive build-test/",
     "lint": "tslint --project .",
+    "coverage": "nyc mocha --require source-map-support/register --recursive build-test/",
     "all": "npm run build && npm run test && npm run lint"
   },
   "author": "BuckeyeDude",
@@ -16,12 +17,31 @@
   "dependencies": {
     "umbra-util": "^1.0.0"
   },
+  "nyc": {
+    "cache": true,
+    "check-coverage": true,
+    "extension": [
+      ".ts"
+    ],
+    "sourceMap": true,
+    "produce-source-map": true,
+    "exclude": [
+      "**/*.d.ts",
+      "tst",
+      "coverage"
+    ],
+    "reporter": [
+      "lcov",
+      "html"
+    ]
+  },
   "devDependencies": {
     "@types/chai": "^4.1.7",
     "@types/mocha": "^5.2.7",
     "@types/source-map-support": "^0.5.0",
     "chai": "^4.2.0",
     "mocha": "^5.2.0",
+    "nyc": "next",
     "source-map-support": "^0.5.11",
     "tslint": "^5.14.0",
     "typescript": "^3.5.3",
