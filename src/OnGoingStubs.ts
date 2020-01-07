@@ -88,6 +88,7 @@ class OnGoingStubs<F extends MockableFunction> implements OngoingStubbing<F> {
     private expectation: ExpectationData<F>;
     private atMostCount: number = NOT_SET;
     private atLeastCount: number = NOT_SET;
+    private timesCount: number = NOT_SET;
 
     constructor(mockedFunction: F) {
         this.internalMocker = GetInternalMocker(mockedFunction);
@@ -158,6 +159,11 @@ class OnGoingStubs<F extends MockableFunction> implements OngoingStubbing<F> {
     }
 
     public times(count: number): OngoingStubbing<F> {
+        if (this.timesCount !== NOT_SET || this.atLeastCount !== NOT_SET || this.atMostCount !== NOT_SET) {
+            throw new Error("Previously set expectation count, value must only be set once");
+        }
+
+        this.timesCount = count;
         this.setExpectedRange(new Range(count));
         return this;
     }
@@ -171,6 +177,10 @@ class OnGoingStubs<F extends MockableFunction> implements OngoingStubbing<F> {
     }
 
     public atMost(atMostInvocations: number): OngoingStubbing<F> {
+        if (this.timesCount !== NOT_SET || (this.atMostCount !== NOT_SET && this.atMostCount !== Number.MAX_SAFE_INTEGER)) {
+            throw new Error("Previously set expectation count, value must only be set once");
+        }
+
         this.atMostCount = atMostInvocations;
         this.atLeastCount = this.atLeastCount !== NOT_SET ? this.atLeastCount : 0;
         this.setExpectedRange(new Range(this.atLeastCount, this.atMostCount));
@@ -178,6 +188,10 @@ class OnGoingStubs<F extends MockableFunction> implements OngoingStubbing<F> {
     }
 
     public atLeast(atLeastInvocations: number): OngoingStubbing<F> {
+        if (this.timesCount !== NOT_SET || (this.atLeastCount !== NOT_SET && this.atLeastCount !== 0)) {
+            throw new Error("Previously set expectation count, value must only be set once");
+        }
+
         this.atLeastCount = atLeastInvocations;
         this.atMostCount = this.atMostCount !== NOT_SET ? this.atMostCount : Number.MAX_SAFE_INTEGER;
         this.setExpectedRange(new Range(this.atLeastCount, this.atMostCount));
@@ -185,14 +199,38 @@ class OnGoingStubs<F extends MockableFunction> implements OngoingStubbing<F> {
     }
 
     private setExpectedRange(range: Range) {
-        this.expectation.expectedRange = range;
         const expectations = this.internalMocker.expectations;
         if (expectations.length > 1 && range.isFixedRange()) {
-            if (!expectations[expectations.length - 2].expectedRange.isFixedRange()) {
-                throw new Error("Previous expecatation had a non fixed range.");
+            const newExpectations = expectations[expectations.length - 1];
+            const lastExpectations = expectations[expectations.length - 2];
+            if (!lastExpectations.expectedRange.isFixedRange()) {
+                if (this.doArgumentsMatch(lastExpectations, newExpectations)) {
+                    throw new Error("Previous expectation had a non fixed range.");
+                }
             }
         }
+
+        this.expectation.expectedRange = range;
+    }
+    private doArgumentsMatch(lastExpectations: ExpectationData<F>, newExpectations: ExpectationData<F>): boolean {
+        if (newExpectations.expectedArgs === null || lastExpectations.expectedArgs === null) {
+            return lastExpectations.expectedArgs === null && newExpectations.expectedArgs === null;
+        }
+
+        if (newExpectations.expectedArgs.length !== lastExpectations.expectedArgs.length) {
+            return false;
+        }
+
+        for (let i = 0; i < newExpectations.expectedArgs.length; i++) {
+            const lastArg = lastExpectations.expectedArgs[i];
+            const newArg = newExpectations.expectedArgs[i];
+            if (!newArg.equals(lastArg)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
 
-export { OnGoingStubs, OngoingStubbing, normalizeMatcherArgs, };
+export { OnGoingStubs, OngoingStubbing, normalizeMatcherArgs };

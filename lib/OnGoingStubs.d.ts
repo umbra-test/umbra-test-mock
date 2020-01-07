@@ -24,6 +24,7 @@ declare class OnGoingStubs<F extends MockableFunction> implements OngoingStubbin
     private expectation;
     private atMostCount;
     private atLeastCount;
+    private timesCount;
     constructor(mockedFunction: F);
     getExpectation(): ExpectationData<F>;
     withArgs(...args: Parameters<F>): OnGoingStubs<F>;
@@ -40,5 +41,6 @@ declare class OnGoingStubs<F extends MockableFunction> implements OngoingStubbin
     atMost(atMostInvocations: number): OngoingStubbing<F>;
     atLeast(atLeastInvocations: number): OngoingStubbing<F>;
     private setExpectedRange;
+    private doArgumentsMatch;
 }
-export { OnGoingStubs, OngoingStubbing, normalizeMatcherArgs, };
+export { OnGoingStubs, OngoingStubbing, normalizeMatcherArgs };

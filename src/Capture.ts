@@ -44,6 +44,13 @@ class CaptureInternal<T> implements Capture<T>, ArgumentValidator<T> {
         return "Argument captor. Currently captured args: " + this.all;
     }
 
+    public equals(other: ArgumentValidator<any>): boolean {
+        if (other instanceof CaptureInternal) {
+            return other.all === this.all;
+        }
+
+        return false;
+    }
 }
 
 function newCapture<T>(): Capture<T> {
