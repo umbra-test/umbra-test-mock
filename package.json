@@ -7,9 +7,9 @@
   "scripts": {
     "build": "tsc && tsc -p tsconfig-test.json",
     "watch-build": "(tsc -w &) && (tsc -w -p tsconfig-test.json)",
-    "test": "mocha --require source-map-support/register --recursive build-test/",
+    "test": "mocha --require source-map-support/register --recursive lib/tests/",
     "lint": "tslint --project .",
-    "coverage": "nyc mocha --require source-map-support/register --recursive build-test/",
+    "coverage": "nyc mocha --require source-map-support/register --recursive lib/tests/",
     "all": "npm run build && npm run test && npm run lint"
   },
   "author": "BuckeyeDude",
