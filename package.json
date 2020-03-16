@@ -2,8 +2,8 @@
   "name": "umbra-test-mock",
   "version": "1.0.0",
   "description": "",
-  "main": "./build/index.js",
-  "types": "./build/index.d.ts",
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
   "scripts": {
     "build": "tsc && tsc -p tsconfig-test.json",
     "watch-build": "(tsc -w &) && (tsc -w -p tsconfig-test.json)",
@@ -15,7 +15,7 @@
   "author": "BuckeyeDude",
   "license": "MIT",
   "dependencies": {
-    "umbra-util": "^1.0.0"
+    "umbra-util": "^0.0.1"
   },
   "nyc": {
     "cache": true,
@@ -41,7 +41,7 @@
     "@types/source-map-support": "^0.5.0",
     "chai": "^4.2.0",
     "mocha": "^5.2.0",
-    "nyc": "next",
+    "nyc": "^15.0.0",
     "source-map-support": "^0.5.11",
     "tslint": "^5.14.0",
     "typescript": "^3.5.3",
