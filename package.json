@@ -1,39 +1,41 @@
 {
   "name": "umbra-test-mock",
-  "version": "1.0.0",
-  "description": "",
+  "version": "0.0.1",
+  "description": "Mocking library included with the Umbra Test packages.",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
-  "scripts": {
-    "build": "tsc && tsc -p tsconfig-test.json",
-    "watch-build": "(tsc -w &) && (tsc -w -p tsconfig-test.json)",
-    "test": "mocha --require source-map-support/register --recursive lib/tests/",
-    "lint": "tslint --project .",
-    "coverage": "nyc mocha --require source-map-support/register --recursive lib/tests/",
-    "all": "npm run build && npm run test && npm run lint"
-  },
-  "author": "BuckeyeDude",
   "license": "MIT",
-  "dependencies": {
-    "umbra-util": "^0.0.1"
+  "scripts": {
+    "build": "tsc",
+    "watch-build": "(tsc -w &) && (tsc -w -p tsconfig-test.json)",
+    "test": "tsc -p tsconfig-test.json && nyc mocha --require source-map-support/register --recursive lib/tests/tst/**/*.js",
+    "lint": "tslint --project .",
+    "coveralls": "nyc report --reporter=text-lcov | coveralls",
+    "all": "npm run build && npm run test && npm run lint && npm run coveralls"
   },
   "nyc": {
+    "lines": 100,
+    "statements": 100,
+    "functions": 100,
+    "branches": 100,
     "cache": true,
     "check-coverage": true,
     "extension": [
       ".ts"
     ],
-    "sourceMap": true,
-    "produce-source-map": true,
     "exclude": [
       "**/*.d.ts",
       "tst",
       "coverage"
     ],
     "reporter": [
+      "text",
       "lcov",
       "html"
     ]
+  },
+  "dependencies": {
+    "@umbra-test/umbra-util": "^0.0.1"
   },
   "devDependencies": {
     "@types/chai": "^4.1.7",
@@ -45,6 +47,15 @@
     "source-map-support": "^0.5.11",
     "tslint": "^5.14.0",
     "typescript": "^3.5.3",
-    "umbra-assert": "^1.0.0"
-  }
+    "umbra-assert": "^0.0.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/umbra-test/umbra-test-mock.git"
+  },
+  "author": "umbra-test authors",
+  "bugs": {
+    "url": "https://github.com/umbra-test/umbra-test-mock/issues"
+  },
+  "homepage": "https://github.com/umbra-test/umbra-test-mock#readme"
 }

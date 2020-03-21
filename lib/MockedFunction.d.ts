@@ -1,4 +1,4 @@
-import { ArgumentValidator } from "umbra-util";
+import { ArgumentValidator } from "@umbra-test/umbra-util";
 import { ExpectationData } from "./InternalMocker";
 import { MockableFunction } from "./Mock";
 declare type ArgumentMatcher = ArgumentValidator<any>[] | null;

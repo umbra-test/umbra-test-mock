@@ -1,4 +1,4 @@
-import { ArgumentValidator } from "umbra-util";
+import { ArgumentValidator } from "@umbra-test/umbra-util";
 import { ExpectationData, InternalMocker } from "./InternalMocker";
 import { Answer, MockableFunction } from "./Mock";
 declare type UnwrapPromise<T extends Promise<any>> = T extends Promise<infer P> ? P : never;

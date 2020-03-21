@@ -1,5 +1,5 @@
 import { mock, expect, verify, spy } from ".."
-import { any, matcher, gt, gte, lt, lte, startsWith, regexMatches } from "umbra-util";
+import { any, matcher, gt, gte, lt, lte, startsWith, regexMatches } from "@umbra-test/umbra-util";
 import { TestClass } from "./TestClass";
 import { assert } from "umbra-assert";
 import "mocha";

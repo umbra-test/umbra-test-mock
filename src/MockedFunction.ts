@@ -1,5 +1,4 @@
-import { SortedArray } from "umbra-util";
-import { ArgumentValidator } from "umbra-util";
+import { ArgumentValidator, SortedArray } from "@umbra-test/umbra-util";
 import { ExpectationData, GetInternalMocker } from "./InternalMocker";
 import { MockableFunction, StrictnessMode } from "./Mock";
 import { StacktraceUtils } from "./StackTraceParser";

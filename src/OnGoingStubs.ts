@@ -1,4 +1,4 @@
-import { ArgumentValidator, eq } from "umbra-util";
+import { ArgumentValidator, eq } from "@umbra-test/umbra-util";
 import { ExpectationData, GetInternalMocker, InternalMocker } from "./InternalMocker";
 import { Answer, MockableFunction } from "./Mock";
 import { ArgumentMatcher } from "./MockedFunction";
