@@ -3,6 +3,11 @@ const REAL_STRING_RETURN_VALUE = "200";
 
 class TestClass {
 
+    public static staticMethod1StringArgNumberReturn(arg1: string): number {
+        console.log("Enter static method with one string arg");
+        return REAL_NUMBER_RETURN_VALUE;
+    }
+
     method1StringArgNumberReturn(arg1: string): number {
         console.log("Enter method with one string arg");
         return REAL_NUMBER_RETURN_VALUE;

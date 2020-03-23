@@ -3,7 +3,8 @@ import {
     GetInternalMocker,
     INTERNAL_MOCKER_NAME,
     InternalMocker,
-    RecordedInvocation
+    RecordedInvocation,
+    GetInternalMockerSafe
 } from "./InternalMocker";
 import { MockableFunction } from "./Mock";
 import { ArgumentMatcher } from "./MockedFunction";
@@ -53,14 +54,19 @@ function clearArray(array: any[]): void {
 function verifyMock<F extends MockableFunction>(mock: any): void {
     const internalMocker: InternalMocker<F> = GetInternalMocker(mock);
 
-    const test = Object.keys(mock);
+    const test = Reflect.ownKeys(mock);
     for (const key of test) {
         if (key === INTERNAL_MOCKER_NAME) {
             continue;
         }
-        const value = mock[key];
+        const propertyDescriptor = Object.getOwnPropertyDescriptor(mock, key);
+        if (propertyDescriptor === undefined || propertyDescriptor.value === undefined) {
+            continue;
+        }
+
+        const value = propertyDescriptor.value;
         if (value) {
-            const internalFunctionMocker = GetInternalMocker(value);
+            const internalFunctionMocker = GetInternalMockerSafe(value);
             if (internalFunctionMocker) {
                 verifyMock(value);
             }

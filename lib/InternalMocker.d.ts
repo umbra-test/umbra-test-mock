@@ -15,6 +15,10 @@ interface RecordedInvocation<F extends MockableFunction> {
     readonly params: Parameters<F>;
     readonly location: string | null;
 }
+declare enum MockType {
+    Full = 0,
+    Partial = 1
+}
 interface InternalMocker<F extends MockableFunction> {
     readonly expectations: ExpectationData<F>[];
     readonly recordedInvocations: RecordedInvocation<F>[];
@@ -23,8 +27,9 @@ interface InternalMocker<F extends MockableFunction> {
     mockName: string;
     inProgressInOrder: InOrderExpectation[];
     isInExpectation: boolean;
+    mockType: MockType;
 }
 declare function GetInternalMockerSafe<F extends MockableFunction>(mock: F): InternalMocker<F> | null;
 declare function GetInternalMocker<F extends MockableFunction>(mock: F): InternalMocker<F>;
-declare function CreateInternalMocker<F extends MockableFunction>(mockedFunction: F, realFunction: F, mockName: string | null, options: MockOptions): InternalMocker<F>;
-export { CreateInternalMocker, ExpectationData, GetInternalMocker, GetInternalMockerSafe, InternalMocker, INTERNAL_MOCKER_NAME, RecordedInvocation, };
+declare function CreateInternalMocker<F extends MockableFunction>(mockedFunction: F, realFunction: F, mockName: string | null, options: MockOptions, mockType: MockType): InternalMocker<F>;
+export { CreateInternalMocker, ExpectationData, GetInternalMocker, GetInternalMockerSafe, InternalMocker, INTERNAL_MOCKER_NAME, RecordedInvocation, MockType };

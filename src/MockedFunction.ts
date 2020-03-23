@@ -1,5 +1,5 @@
 import { ArgumentValidator, printObject, SortedArray } from "@umbra-test/umbra-util";
-import { ExpectationData, GetInternalMocker } from "./InternalMocker";
+import { ExpectationData, GetInternalMocker, MockType } from "./InternalMocker";
 import { MockableFunction, StrictnessMode } from "./Mock";
 import { StacktraceUtils } from "./StackTraceParser";
 
@@ -174,6 +174,10 @@ function createMockedFunction<F extends MockableFunction>(): F {
             }
             const result = expectationData.answer(...args);
             return result;
+        }
+
+        if (internalMocker.mockType === MockType.Partial) {
+            return internalMocker.realFunction(args);
         }
 
         if (internalMocker.options.strictMode === StrictnessMode.Strict) {

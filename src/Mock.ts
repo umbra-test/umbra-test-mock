@@ -1,6 +1,6 @@
-import { CreateInternalMocker, ExpectationData, INTERNAL_MOCKER_NAME } from "./InternalMocker";
+import { CreateInternalMocker, ExpectationData, INTERNAL_MOCKER_NAME, MockType } from "./InternalMocker";
 import { createMockedFunction } from "./MockedFunction";
-import { OngoingStubbing, OnGoingStubs, BaseOngoingStubbing } from "./OnGoingStubs";
+import { BaseOngoingStubbing, OngoingStubbing, OnGoingStubs } from "./OnGoingStubs";
 import { createdMocks } from "./UmbraTestRunnerIntegration";
 
 type Answer<F extends MockableFunction> = (...args: Parameters<F>) => ReturnType<F>;
@@ -20,18 +20,21 @@ type ClassConstructor<T> = (new (...args: any[]) => T) | (new () => T);
 
 class InvocationHandler<T extends object> implements ProxyHandler<T> {
 
-    private readonly cachedStubs: any = {};
+    private readonly cachedPrototypeStubs: any = {};
+    private readonly cachedStaticStubs: any = {};
     private readonly clazz: any | null | undefined;
     private readonly realObject: T;
     private readonly mockName: string | null;
     private readonly options: MockOptions;
+    private readonly mockType: MockType;
     private cachedFunctionStub: any | null = null;
 
-    constructor(clazz: any | null | undefined, realObject: T, mockName: string | null, options: MockOptions) {
+    constructor(clazz: any | null | undefined, realObject: T, mockName: string | null, options: MockOptions, mockType: MockType) {
         this.clazz = clazz;
         this.realObject = realObject;
         this.mockName = mockName;
         this.options = options;
+        this.mockType = mockType;
     }
 
     public apply(target: T, thisArg: any, argArray?: any): any {
@@ -51,39 +54,54 @@ class InvocationHandler<T extends object> implements ProxyHandler<T> {
             return this.cachedFunctionStub[p];
         }
 
+        let targetCache: any;
         if (this.clazz) {
-            const realMethod = this.clazz[p];
-            if (realMethod === null || realMethod === undefined) {
-                const validMethods = Object.getOwnPropertyNames(this.clazz).join(", ");
-                throw new Error(`Method "${p.toString()}" was called on class "${this.clazz.constructor.name}". ` +
-                    `Ensure method exists on prototype. Valid methods: [${validMethods}]`);
+            const realPrototypeMethod = this.clazz[p];
+            if (realPrototypeMethod === null || realPrototypeMethod === undefined) {
+                const realStaticMethod = (this.realObject as any)[p];
+                if (realStaticMethod !== null && realStaticMethod !== undefined) {
+                    if (this.realObject) {
+                        targetCache = this.cachedStaticStubs;
+                    }
+                } else {
+                    const validMethods = Object.getOwnPropertyNames(this.clazz).join(", ");
+                    throw new Error(`Method "${p.toString()}" was called on class "${this.clazz.constructor.name}". ` +
+                        `Ensure method exists on prototype. Valid methods: [${validMethods}]`);
+                }
+            } else {
+                targetCache = this.cachedPrototypeStubs;
             }
+        } else {
+            targetCache = this.cachedStaticStubs;
         }
-        if (!this.cachedStubs[p]) {
+        if (!targetCache[p]) {
             const mockedFunction: F = createMockedFunction();
             const mockName: string = this.mockName !== null ? `${this.mockName}.${p.toString()}` : p.toString();
             Object.defineProperty(mockedFunction, "name", { value: mockName });
-            const internalMocker = CreateInternalMocker<F>(mockedFunction, (target as any)[p], mockName, this.options);
-            if (internalMocker.isInExpectation) {
-                internalMocker.isInExpectation = false;
-            }
-            this.cachedStubs[p] = mockedFunction;
+            CreateInternalMocker<F>(mockedFunction, (target as any)[p], mockName, this.options, this.mockType);
+            targetCache[p] = mockedFunction;
         }
 
-        return this.cachedStubs[p];
-    }
-
-    public enumerate(target: T): PropertyKey[] {
-        return this.ownKeys(target);
+        return targetCache[p];
     }
 
     public ownKeys(target: T): PropertyKey[] {
-        const test2 = Object.keys(this.cachedStubs);
-        return test2;
+        const normalTargetKeys = Reflect.ownKeys(target);
+        const cachedPrototypeKeys = Reflect.ownKeys(this.cachedPrototypeStubs);
+        for (const key of normalTargetKeys) {
+            if (cachedPrototypeKeys.indexOf(key) === -1) {
+                cachedPrototypeKeys.push(key);
+            }
+        }
+        return cachedPrototypeKeys;
     }
 
     public getOwnPropertyDescriptor(target: T, p: PropertyKey): PropertyDescriptor | undefined {
-        return Object.getOwnPropertyDescriptor(this.cachedStubs, p);
+        if (this.cachedPrototypeStubs[p]) {
+            return Object.getOwnPropertyDescriptor(this.cachedPrototypeStubs, p);
+        }
+
+        return Reflect.getOwnPropertyDescriptor(target, p);
     }
 
     public isExtensible(target: T): boolean {
@@ -94,13 +112,9 @@ class InvocationHandler<T extends object> implements ProxyHandler<T> {
         if (!this.cachedFunctionStub) {
             const mockedFunction: F = createMockedFunction();
             if (this.mockName !== null) {
-                Object.defineProperty(mockedFunction, "name", { value: this.mockName });
+                Reflect.defineProperty(mockedFunction, "name", { value: this.mockName });
             }
-            const internalMocker = CreateInternalMocker<F>(mockedFunction, realFunction, this.mockName, this.options);
-            if (internalMocker.isInExpectation) {
-                internalMocker.isInExpectation = false;
-            }
-
+            CreateInternalMocker<F>(mockedFunction, realFunction, this.mockName, this.options, this.mockType);
             this.cachedFunctionStub = mockedFunction;
         }
     }
@@ -146,8 +160,8 @@ function setDefaultOptions(options: Partial<MockOptions>) {
 function mock<T>(object?: ClassConstructor<T>, mockName?: string): T;
 function mock<T extends object>(mockName: string): T;
 function mock<T extends object>(clazz?: ClassConstructor<T> | string,
-    mockName?: string | null,
-    options: MockOptions = defaultOptions): T {
+                                mockName?: string | null,
+                                options: MockOptions = defaultOptions): T {
     // Passing a stub function here allows us to pass functions as well as objects to the proxy. This is because the
     // function is both an object and marked as [[Callable]]
     const stubFunction = (() => { /* intentionally blank */ }) as T;
@@ -159,16 +173,15 @@ function mock<T extends object>(clazz?: ClassConstructor<T> | string,
         mockName = null;
     }
 
-    const proxy = new Proxy<T>(stubFunction, new InvocationHandler<T>(clazz ? clazz.prototype : null, stubFunction, mockName, options));
+    const proxy = new Proxy<T>(stubFunction, new InvocationHandler<T>(clazz ? clazz.prototype : null, stubFunction, mockName, options, MockType.Full));
     if (createdMocks) {
         createdMocks.push(proxy);
     }
     return proxy;
 }
 
-function spy<T extends object>(realObject: T, options: MockOptions = defaultOptions) {
-    return new Proxy(realObject,
-        new InvocationHandler<T>(Object.getPrototypeOf(realObject), realObject, null, options));
+function partialMock<T extends object>(realObject: T, options: MockOptions = defaultOptions) {
+    return new Proxy(realObject, new InvocationHandler<T>(Object.getPrototypeOf(realObject), realObject, null, options, MockType.Partial));
 }
 
 function expect<F extends MockableFunction>(mockedFunction: F): OngoingStubbing<F> {
@@ -186,8 +199,8 @@ function inOrder(...stubs: BaseOngoingStubbing<any, any>[]) {
         currentIndex: 0
     };
     const castStubs = stubs as OnGoingStubs<any>[];
-    for (const stub of castStubs) {
-        const expectation: ExpectationData<any> = stub.getExpectation();
+    for (const castStub of castStubs) {
+        const expectation: ExpectationData<any> = castStub.getExpectation();
         inOrderExpectation.expectations.push(expectation);
         expectation.inOrderOverride = inOrderExpectation;
     }
@@ -196,7 +209,7 @@ function inOrder(...stubs: BaseOngoingStubbing<any, any>[]) {
 export {
     inOrder,
     mock,
-    spy,
+    partialMock,
     expect,
     setDefaultOptions,
     MockableFunction,

@@ -18,6 +18,11 @@ interface RecordedInvocation<F extends MockableFunction> {
     readonly location: string | null;
 }
 
+enum MockType {
+    Full,
+    Partial
+}
+
 interface InternalMocker<F extends MockableFunction> {
 
     readonly expectations: ExpectationData<F>[];
@@ -33,6 +38,8 @@ interface InternalMocker<F extends MockableFunction> {
     inProgressInOrder: InOrderExpectation[];
 
     isInExpectation: boolean;
+
+    mockType: MockType;
 }
 
 function GetInternalMockerSafe<F extends MockableFunction>(mock: F): InternalMocker<F> | null {
@@ -52,7 +59,8 @@ function GetInternalMocker<F extends MockableFunction>(mock: F): InternalMocker<
 function CreateInternalMocker<F extends MockableFunction>(mockedFunction: F,
                                                           realFunction: F,
                                                           mockName: string | null,
-                                                          options: MockOptions)
+                                                          options: MockOptions,
+                                                          mockType: MockType)
 {
     const internalMocker: InternalMocker<F> = {
         expectations: [],
@@ -61,7 +69,8 @@ function CreateInternalMocker<F extends MockableFunction>(mockedFunction: F,
         options: options,
         inProgressInOrder: [],
         isInExpectation: false,
-        mockName: mockName ?? "mock"
+        mockName: mockName ?? "mock",
+        mockType: mockType
     };
 
     (mockedFunction as any)[INTERNAL_MOCKER_NAME] = internalMocker;
@@ -76,4 +85,5 @@ export {
     InternalMocker,
     INTERNAL_MOCKER_NAME,
     RecordedInvocation,
+    MockType
 };

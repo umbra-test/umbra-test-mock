@@ -1,12 +1,13 @@
 import { any, ArgumentValidator, eq, gt, gte, lt, lte, matcher, regexMatches, startsWith } from "@umbra-test/umbra-util";
 import { Capture, newCapture } from "./Capture";
-import { expect, inOrder, mock, setDefaultOptions, spy, Answer } from "./Mock";
+import { Answer, expect, inOrder, mock, partialMock, setDefaultOptions } from "./Mock";
 import { reset, verify } from "./Verify";
+
 import "./UmbraTestRunnerIntegration";
 
 export {
     mock,
-    spy,
+    partialMock,
     expect,
     reset,
     verify,

@@ -1,12 +1,12 @@
-import { mock, reset, verify, expect, spy, any, inOrder, Answer } from "..";
+import { mock, reset, verify, expect, partialMock, any, inOrder, Answer, eq } from "..";
 import { assert } from "umbra-assert";
 import { TestClass, REAL_NUMBER_RETURN_VALUE } from "./TestClass";
-import "mocha";
+import * as os from "os";
+import * as process from "process";
 
-const MOCK_RETURN_VALUE = 200;
+const MOCK_RETURN_VALUE = 100;
 const NUMBER_CALL_PARAM_1 = 10;
 const STRING_CALL_PARAM_1 = "callParam1";
-
 describe("ES6 class strict test cases", () => {
 
     describe("mock", () => {
@@ -332,7 +332,7 @@ describe("ES6 class strict test cases", () => {
             assert.equal(true, didThrow);
             reset(mockedTestInterface);
         });
-        
+
         it("should throw if times with no args is called with atLeast with specific args", () => {
             const mockedTestInterface = mock(TestClass);
 
@@ -469,7 +469,7 @@ describe("ES6 class strict test cases", () => {
             try {
                 expect(realObject).once();
             } catch (e) {
-                assert.regexMatches(e.message, /Passed an object that was not a mock. Object: \(\) => { }/);
+                assert.regexMatches(e.message, new RegExp(`Passed an object that was not a mock. Object: ${realObject.toString().replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&')}`));
                 didThrow = true;
             }
 
@@ -951,26 +951,43 @@ describe("ES6 class strict test cases", () => {
         });
     });
 
-    describe("spy", () => {
-        it("should return spied value", () => {
-            const mockedTestInterface = spy(new TestClass());
-
-            expect(mockedTestInterface.method1StringArgNumberReturn).withArgs(any()).andCallRealMethod();
-
-            assert.equal(mockedTestInterface.method1StringArgNumberReturn(STRING_CALL_PARAM_1), REAL_NUMBER_RETURN_VALUE);
-
-            verify(mockedTestInterface);
-        });
+    describe("partialMock", () => {
 
         it("should call through to the real method if specified", () => {
-            const mockedTestInterface = spy(new TestClass());
+            const mockedTestInterface = partialMock(new TestClass());
 
-            expect(mockedTestInterface.method1StringArgNumberReturn).withArgs(any()).andCallRealMethod();
+            expect(mockedTestInterface.method1StringArgNumberReturn).withArgs(STRING_CALL_PARAM_1).andCallRealMethod();
+            expect(mockedTestInterface.method1StringArgNumberReturn).withArgs("2").andReturn(MOCK_RETURN_VALUE);
 
             assert.equal(mockedTestInterface.method1StringArgNumberReturn(STRING_CALL_PARAM_1), REAL_NUMBER_RETURN_VALUE);
+            assert.equal(mockedTestInterface.method1StringArgNumberReturn("2"), MOCK_RETURN_VALUE);
 
             verify(mockedTestInterface);
         });
+
+        it("should allow mocking static methods", () => {
+            const mockedTestInterface = partialMock(TestClass);
+
+            expect(mockedTestInterface.staticMethod1StringArgNumberReturn).withArgs(STRING_CALL_PARAM_1).andCallRealMethod();
+            expect(mockedTestInterface.staticMethod1StringArgNumberReturn).withArgs("2").andReturn(MOCK_RETURN_VALUE);
+
+            assert.equal(mockedTestInterface.staticMethod1StringArgNumberReturn(STRING_CALL_PARAM_1), REAL_NUMBER_RETURN_VALUE);
+            assert.equal(mockedTestInterface.staticMethod1StringArgNumberReturn("2"), MOCK_RETURN_VALUE);
+
+            verify(mockedTestInterface);
+        });
+
+        it("should automatically call through to unmocked methods", () => {
+            const osMock = partialMock(os);
+
+            const expected = "FakeEndian";
+            // @ts-expect-error 
+            expect(osMock.endianness).andReturn(expected);
+
+            assert.equal(expected, osMock.endianness());
+            assert.notEqual(expected, os.endianness());
+            assert.equal(process.arch, osMock.arch());
+        })
     });
 
 });
