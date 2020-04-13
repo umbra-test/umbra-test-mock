@@ -3,6 +3,12 @@ import { TestClass } from "./TestClass";
 import { assert } from "umbra-assert";
 import "mocha";
 
+interface ConflictingCaptureInterface {
+    all: number[];
+    first: number;
+    last: number;
+}
+
 describe("Capture test cases", () => {
 
     describe("Function capture tests", () => {
@@ -14,7 +20,7 @@ describe("Capture test cases", () => {
             const mockedCallback: Callback = mock();
             const capture: Capture<Callback> = newCapture();
 
-            expect(mockedFunction).withArgs(capture.capture());
+            expect(mockedFunction).withArgs(capture);
             expect(mockedCallback).once();
 
             mockedFunction(mockedCallback);
@@ -29,6 +35,21 @@ describe("Capture test cases", () => {
             verify(mockedFunction, mockedCallback);
         });
 
+        it ("Should work with a conflicting interface", () => {
+            const capture: Capture<ConflictingCaptureInterface> = newCapture();
+            type Callback = (test: ConflictingCaptureInterface) => void;
+            const mockedFunction: Callback = mock();
+            
+            expect(mockedFunction).withArgs(capture);
+
+            const value = { first: 0, last: 1, all: [] };
+            mockedFunction(value);
+
+            verify(mockedFunction);
+
+            assert.equal(value, capture.first);
+        });
+
     });
 
     describe("1 arg overrides", () => {
@@ -37,7 +58,7 @@ describe("Capture test cases", () => {
             const mockedTestInterface = mock(TestClass);
 
             const argCapture: Capture<string> = newCapture();
-            expect(mockedTestInterface.method1StringArgNumberReturn).withArgs(argCapture.capture()).andStubReturn(0);
+            expect(mockedTestInterface.method1StringArgNumberReturn).withArgs(argCapture).andStubReturn(0);
 
             assert.equal(argCapture.last, null);
             assert.equal(argCapture.first, null);
@@ -74,7 +95,7 @@ describe("Capture test cases", () => {
             const arg1Capture: Capture<string> = newCapture();
             const arg2Capture: Capture<string> = newCapture();
             expect(mockedTestInterface.method2StringArgNumberReturn)
-                .withArgs(arg1Capture.capture(), arg2Capture.capture())
+                .withArgs(arg1Capture, arg2Capture)
                 .andStubReturn(0);
 
             assert.equal(arg1Capture.last, null);

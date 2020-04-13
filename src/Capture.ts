@@ -1,14 +1,14 @@
 import { ArgumentValidator } from "@umbra-test/umbra-util";
 
-interface Capture<T> {
+interface CaptureInternalInterface<T> extends ArgumentValidator<T> {
     first: T | null;
     last: T | null;
     all: T[];
-
-    capture(): T;
 }
 
-class CaptureInternal<T> implements Capture<T>, ArgumentValidator<T> {
+type Capture<T> = CaptureInternalInterface<T> & T;
+
+class CaptureInternal<T> implements CaptureInternalInterface<T>, ArgumentValidator<T> {
 
     public readonly all: T[] = [];
 
@@ -26,10 +26,6 @@ class CaptureInternal<T> implements Capture<T>, ArgumentValidator<T> {
         }
 
         return this.all[this.all.length - 1];
-    }
-
-    public capture(): T {
-        return this as any as T;
     }
 
     public matches(arg: T): boolean {
@@ -54,7 +50,7 @@ class CaptureInternal<T> implements Capture<T>, ArgumentValidator<T> {
 }
 
 function newCapture<T>(): Capture<T> {
-    return new CaptureInternal();
+    return new CaptureInternal() as any;
 }
 
 export {
