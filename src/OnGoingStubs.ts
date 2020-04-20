@@ -1,4 +1,5 @@
 import { ArgumentValidator, eq } from "@umbra-test/umbra-util";
+import { assert } from "umbra-assert";
 import { ExpectationData, GetInternalMocker, InternalMocker } from "./InternalMocker";
 import { Answer, MockableFunction } from "./Mock";
 import { ArgumentMatcher } from "./MockedFunction";
@@ -81,7 +82,7 @@ function normalizeMatcherArgs<F extends MockableFunction>(args: Parameters<F>): 
 }
 
 const NOT_SET = -1;
-class OnGoingStubs<F extends MockableFunction> implements OngoingStubbing<F> {
+class OnGoingStubs<F extends MockableFunction> extends assert implements OngoingStubbing<F> {
 
     public readonly internalMocker: InternalMocker<F>;
     private currentArgumentExpectations: ArgumentMatcher;
@@ -91,6 +92,7 @@ class OnGoingStubs<F extends MockableFunction> implements OngoingStubbing<F> {
     private timesCount: number = NOT_SET;
 
     constructor(mockedFunction: F) {
+        super();
         this.internalMocker = GetInternalMocker(mockedFunction);
         this.currentArgumentExpectations = null;
         this.internalMocker.isInExpectation = true;

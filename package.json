@@ -49,7 +49,7 @@
     "source-map-support": "^0.5.11",
     "tslint": "^5.14.0",
     "typescript": "^3.5.3",
-    "umbra-assert": "^0.0.1"
+    "umbra-assert": "0.0.1"
   },
   "repository": {
     "type": "git",
