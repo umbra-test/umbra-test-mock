@@ -10,6 +10,7 @@
     "watch-build": "(tsc -w &) && (tsc -w -p tsconfig-test.json)",
     "test": "tsc -p tsconfig-test.json && nyc mocha --require source-map-support/register --recursive lib/tests/**/*.test.js",
     "lint": "tslint --project .",
+    "fixlinks": "npm link @umbra-test/umbra-util && npm link umbra-assert",
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
     "all": "npm run build && npm run test && npm run lint && npm run coveralls"
   },
@@ -37,6 +38,7 @@
     ]
   },
   "dependencies": {
+    "@types/node": "^13.13.0",
     "@umbra-test/umbra-util": "^0.0.1"
   },
   "devDependencies": {
