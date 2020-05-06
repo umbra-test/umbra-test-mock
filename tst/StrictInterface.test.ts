@@ -11,6 +11,14 @@ interface InterfaceFunction {
     (): string;
 }
 
+interface FakeEventEmitter {
+
+    on(event: "close", listener: () => void): this;
+    on(event: "error", listener: (error: Error) => void): this;
+    on(event: string, listener: (...args: any[]) => void): this;
+
+}
+
 type TestFunction = () => string;
 type TestFunctionWithOptionalString = (optionalArg?: string) => string;
 type TestFunctionReturnsPromiseString = () => Promise<string>;
@@ -28,6 +36,14 @@ describe("Interface test cases", () => {
             assert.equal(MOCK_RETURN_VAL, mockedTestInterface.exampleMethod());
 
             verify(mockedTestInterface.exampleMethod);
+        });
+    });
+
+    describe("FakeEventEmitter", () => {
+        it("mocks overloaded function correctly", () => {
+            const testInterface = mock<FakeEventEmitter>();
+            const callback: () => void = mock();
+            expect(testInterface.on).withArgs("close", callback)
         });
     });
 
@@ -53,7 +69,7 @@ describe("Interface test cases", () => {
             try {
                 assert.equal(MOCK_RETURN_VAL, mockedFunction());
             } catch (e) {
-                assert.regexMatches(e.message, /mockedFunction\(\) was called but no expectation matched.\nExpectations:\n\tmockedFunction\(""\). Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictInterface.test.ts:50:13/);
+                assert.regexMatches(e.message, /mockedFunction\(\) was called but no expectation matched.\nExpectations:\n\tmockedFunction\(""\). Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictInterface.test.ts:66:13/);
                 didThrow = true;
             }
 
@@ -71,7 +87,7 @@ describe("Interface test cases", () => {
                 mockedFunction("noMatch");
             } catch (e) {
                 didThrow = true;
-                assert.regexMatches(e.message, /mock\("noMatch"\) was called but no expectation matched.\nExpectations:\n\tmock\("arg"\). Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictInterface.test.ts:66:13\n\n\tmock\(\). Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictInterface.test.ts:67:13\n/)
+                assert.regexMatches(e.message, /mock\("noMatch"\) was called but no expectation matched.\nExpectations:\n\tmock\("arg"\). Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictInterface.test.ts:82:13\n\n\tmock\(\). Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictInterface.test.ts:83:13\n/)
             }
 
             assert.equal(true, didThrow);
@@ -86,7 +102,7 @@ describe("Interface test cases", () => {
             try {
                 verify(mockedFunction);
             } catch (e) {
-                assert.regexMatches(e.message, /Expected 1 invocations, got 0\.\n.*?StrictInterface.test.ts:83:13/);
+                assert.regexMatches(e.message, /Expected 1 invocations, got 0\.\nExpected at: .*?StrictInterface.test.ts:99:13/);
                 didThrow = true;
             }
 

@@ -1,6 +1,6 @@
 import { ArgumentValidator, eq } from "@umbra-test/umbra-util";
-import { assert } from "umbra-assert";
-import { ExpectationData, GetInternalMocker, InternalMocker } from "./InternalMocker";
+import { Expect } from "umbra-assert";
+import { ExpectationData, GetInternalMocker, InternalMocker, GetInternalMockerSafe } from "./InternalMocker";
 import { Answer, MockableFunction } from "./Mock";
 import { ArgumentMatcher } from "./MockedFunction";
 import { Range } from "./Range";
@@ -75,14 +75,14 @@ function createPromiseRejectAnswer<F extends MockableFunction>(error: Error): An
 function normalizeMatcherArgs<F extends MockableFunction>(args: Parameters<F>): ArgumentValidator<any>[] {
     const normalizedArgs: Parameters<F> = [] as any;
     for (const arg of args) {
-        const argMatcher: any = typeof arg.matches === "function" ? arg : eq(arg);
+        const argMatcher: any = GetInternalMockerSafe(arg) === null && typeof arg.matches === "function" ? arg : eq(arg);
         normalizedArgs.push(argMatcher);
     }
     return normalizedArgs;
 }
 
 const NOT_SET = -1;
-class OnGoingStubs<F extends MockableFunction> extends assert implements OngoingStubbing<F> {
+class OnGoingStubs<F extends MockableFunction> extends Expect implements OngoingStubbing<F> {
 
     public readonly internalMocker: InternalMocker<F>;
     private currentArgumentExpectations: ArgumentMatcher;
@@ -92,7 +92,7 @@ class OnGoingStubs<F extends MockableFunction> extends assert implements Ongoing
     private timesCount: number = NOT_SET;
 
     constructor(mockedFunction: F) {
-        super();
+        super(mockedFunction);
         this.internalMocker = GetInternalMocker(mockedFunction);
         this.currentArgumentExpectations = null;
         this.internalMocker.isInExpectation = true;

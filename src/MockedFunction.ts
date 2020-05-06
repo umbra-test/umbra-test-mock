@@ -1,4 +1,4 @@
-import { ArgumentValidator, SortedArray } from "@umbra-test/umbra-util";
+import { ArgumentValidator, printObject, SortedArray } from "@umbra-test/umbra-util";
 import { ExpectationData, GetInternalMocker } from "./InternalMocker";
 import { MockableFunction, StrictnessMode } from "./Mock";
 import { StacktraceUtils } from "./StackTraceParser";
@@ -186,7 +186,7 @@ function createMockedFunction<F extends MockableFunction>(): F {
             const wording = internalMocker.expectations.length > 0 ? "matched" : "was set";
             const argsStringified: string[] = [];
             for (const arg of args) {
-                argsStringified.push(JSON.stringify(arg));
+                argsStringified.push(printObject(arg));
             }
             const argsText = argsStringified.join(", ");
             throw new Error(`${mockedFunc.name}(${argsText}) was called but no expectation ${wording}.${expectations}`);

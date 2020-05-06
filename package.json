@@ -1,6 +1,6 @@
 {
   "name": "umbra-test-mock",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Mocking library included with the Umbra Test packages.",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
@@ -39,7 +39,8 @@
   },
   "dependencies": {
     "@types/node": "^13.13.0",
-    "@umbra-test/umbra-util": "^0.0.1"
+    "umbra-assert": "0.0.3",
+    "@umbra-test/umbra-util": "^0.0.3"
   },
   "devDependencies": {
     "@types/chai": "^4.1.7",
@@ -50,8 +51,7 @@
     "nyc": "^15.0.0",
     "source-map-support": "^0.5.11",
     "tslint": "^5.14.0",
-    "typescript": "^3.5.3",
-    "umbra-assert": "0.0.1"
+    "typescript": "^3.5.3"
   },
   "repository": {
     "type": "git",

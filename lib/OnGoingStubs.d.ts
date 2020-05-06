@@ -1,5 +1,5 @@
 import { ArgumentValidator } from "@umbra-test/umbra-util";
-import { assert } from "umbra-assert";
+import { Expect } from "umbra-assert";
 import { ExpectationData, InternalMocker } from "./InternalMocker";
 import { Answer, MockableFunction } from "./Mock";
 declare type UnwrapPromise<T extends Promise<any>> = T extends Promise<infer P> ? P : never;
@@ -19,7 +19,7 @@ interface OngoingStubbing<F extends MockableFunction> {
     twice(): OngoingStubbing<F>;
 }
 declare function normalizeMatcherArgs<F extends MockableFunction>(args: Parameters<F>): ArgumentValidator<any>[];
-declare class OnGoingStubs<F extends MockableFunction> extends assert implements OngoingStubbing<F> {
+declare class OnGoingStubs<F extends MockableFunction> extends Expect implements OngoingStubbing<F> {
     readonly internalMocker: InternalMocker<F>;
     private currentArgumentExpectations;
     private expectation;

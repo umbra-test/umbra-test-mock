@@ -353,7 +353,7 @@ describe("ES6 class strict test cases", () => {
             const realObject = () => {};
 
             
-            let didThrow = true;
+            let didThrow = false;
             try {
                 expect(realObject).once();
             } catch (e) {
@@ -362,6 +362,34 @@ describe("ES6 class strict test cases", () => {
             }
 
             assert.equal(true, didThrow);
+        });
+
+        it("Handles mocks in expected arg names when error is thrown", () => {
+            const testClass: TestClass = mock();
+            const arg1: TestClass = mock();
+            
+            expect(testClass.method1AnyArgNumberReturn).withArgs(arg1);
+            
+            let didThrow = false;
+            try {
+                testClass.method1AnyArgNumberReturn(null);
+            } catch (e) {
+                assert.regexMatches(e.message, /method1AnyArgNumberReturn\(null\) was called but no expectation matched.\nExpectations:\n\tmethod1AnyArgNumberReturn\(mock\). Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictEs6Class.test.ts:371:13/)
+                didThrow = true;
+            }
+
+            assert.equal(true, didThrow);
+        });
+
+        it("Handles mocks in expected arg names", () => {
+            const testClass: TestClass = mock();
+            const arg1: TestClass = mock();
+            
+            expect(testClass.method1AnyArgNumberReturn).withArgs(arg1);
+            
+            testClass.method1AnyArgNumberReturn(arg1);
+
+            verify(testClass, arg1);
         });
 
         it("should return mocked value", () => {
