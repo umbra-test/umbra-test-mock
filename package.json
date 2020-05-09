@@ -1,6 +1,6 @@
 {
   "name": "umbra-test-mock",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Mocking library included with the Umbra Test packages.",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",

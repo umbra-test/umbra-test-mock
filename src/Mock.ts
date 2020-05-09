@@ -43,11 +43,11 @@ class InvocationHandler<T extends object> implements ProxyHandler<T> {
     }
 
     public get<F extends MockableFunction>(target: T, p: PropertyKey, receiver: any): any {
-        if (p === INTERNAL_MOCKER_NAME) {
+        if (p === INTERNAL_MOCKER_NAME || Object.getPrototypeOf(Function)[p] !== undefined) {
             // this will happen if we're mocking a single function
             this.mockSingleFunctionIfNecessary<F>((target as any)[p]);
 
-            return this.cachedFunctionStub[INTERNAL_MOCKER_NAME];
+            return this.cachedFunctionStub[p];
         }
 
         if (this.clazz) {

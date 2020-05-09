@@ -1,4 +1,5 @@
 const REAL_NUMBER_RETURN_VALUE = 200;
+const REAL_STRING_RETURN_VALUE = "200";
 
 class TestClass {
 
@@ -15,6 +16,11 @@ class TestClass {
     method1AnyArgNumberReturn(arg1: any): number {
         console.log("Enter method with one any arg");
         return REAL_NUMBER_RETURN_VALUE;
+    }
+
+    method1AnyArgStringReturn(arg1: any): string {
+        console.log("Enter method with one any arg");
+        return REAL_STRING_RETURN_VALUE;
     }
 
     method1ObjectArgNumberReturn(arg1: {}): number {

@@ -109,6 +109,20 @@ describe("Interface test cases", () => {
             assert.equal(true, didThrow);
         });
 
+        it("Handles binding mock functions", () => {
+            const mockedFunction: InterfaceFunction = mock();
+            
+            const expected = "30";
+            expect(mockedFunction).andReturn(expected);
+            
+            const boundFunction = mockedFunction.bind(undefined);
+            const output = "testString30000".replace("test", boundFunction());
+
+            assert.equal("30String30000", output);
+
+            verify(mockedFunction);
+        });
+
         it("should return mock value", () => {
             const mockedTestInterface = mock<TestFunction>();
 

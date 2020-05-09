@@ -392,6 +392,35 @@ describe("ES6 class strict test cases", () => {
             verify(testClass, arg1);
         });
 
+        it("Handles binding mock functions", () => {
+            const testClass: TestClass = mock();
+            const arg1: TestClass = mock();
+            
+            const expected = 20;
+            expect(testClass.method1AnyArgNumberReturn).withArgs(arg1).andReturn(expected);
+            
+            const boundFunction = testClass.method1AnyArgNumberReturn.bind(undefined, arg1);
+            const output = boundFunction();
+
+            assert.equal(expected, output);
+
+            verify(testClass, arg1);
+        });
+
+        it("Handles binding mock functions 2", () => {
+            const testClass: TestClass = mock();
+            
+            const expected = "30";
+            expect(testClass.method1AnyArgStringReturn).withArgs("arg1").andReturn(expected);
+            
+            const boundFunction = testClass.method1AnyArgStringReturn.bind(undefined, "arg1");
+            const output = "testString30000".replace("test", boundFunction());
+
+            assert.equal("30String30000", output);
+
+            verify(testClass);
+        });
+
         it("should return mocked value", () => {
             const mockedTestClass: TestClass = mock(TestClass);
 
