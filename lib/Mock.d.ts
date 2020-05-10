@@ -1,5 +1,5 @@
 import { ExpectationData } from "./InternalMocker";
-import { OngoingStubbing } from "./OnGoingStubs";
+import { OngoingStubbing, BaseOngoingStubbing } from "./OnGoingStubs";
 declare type Answer<F extends MockableFunction> = (...args: Parameters<F>) => ReturnType<F>;
 declare type MockableFunction = (...args: any[]) => any;
 declare enum StrictnessMode {
@@ -20,5 +20,5 @@ interface InOrderExpectation {
     expectations: ExpectationData<any>[];
     currentIndex: number;
 }
-declare function inOrder(...stubs: OngoingStubbing<any>[]): void;
+declare function inOrder(...stubs: BaseOngoingStubbing<any, any>[]): void;
 export { inOrder, mock, spy, expect, setDefaultOptions, MockableFunction, InOrderExpectation, Answer, MockOptions, StrictnessMode, ClassConstructor, };

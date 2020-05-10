@@ -1,6 +1,6 @@
 import { CreateInternalMocker, ExpectationData, INTERNAL_MOCKER_NAME } from "./InternalMocker";
 import { createMockedFunction } from "./MockedFunction";
-import { OngoingStubbing, OnGoingStubs } from "./OnGoingStubs";
+import { OngoingStubbing, OnGoingStubs, BaseOngoingStubbing } from "./OnGoingStubs";
 import { createdMocks } from "./UmbraTestRunnerIntegration";
 
 type Answer<F extends MockableFunction> = (...args: Parameters<F>) => ReturnType<F>;
@@ -172,7 +172,7 @@ function spy<T extends object>(realObject: T, options: MockOptions = defaultOpti
 }
 
 function expect<F extends MockableFunction>(mockedFunction: F): OngoingStubbing<F> {
-    return new OnGoingStubs(mockedFunction);
+    return new OnGoingStubs(mockedFunction) as any as OngoingStubbing<F>;
 }
 
 interface InOrderExpectation {
@@ -180,7 +180,7 @@ interface InOrderExpectation {
     currentIndex: number;
 }
 
-function inOrder(...stubs: OngoingStubbing<any>[]) {
+function inOrder(...stubs: BaseOngoingStubbing<any, any>[]) {
     const inOrderExpectation: InOrderExpectation = {
         expectations: [],
         currentIndex: 0

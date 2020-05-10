@@ -42,6 +42,10 @@ class TestClass {
         return Promise.resolve(REAL_NUMBER_RETURN_VALUE);
     }
 
+    method1AnyArgVoidReturn(arg1: any): void {
+        console.log("Enter method with one any arg, void return");
+    }
+
 }
 
 export {

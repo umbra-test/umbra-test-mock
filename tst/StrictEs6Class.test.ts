@@ -1,4 +1,4 @@
-import { mock, reset, verify, expect, spy, any, inOrder } from "..";
+import { mock, reset, verify, expect, spy, any, inOrder, Answer } from "..";
 import { assert } from "umbra-assert";
 import { TestClass, REAL_NUMBER_RETURN_VALUE } from "./TestClass";
 import "mocha";
@@ -208,7 +208,7 @@ describe("ES6 class strict test cases", () => {
 
             mockedTestInterface.method1NumberArgNumberReturn(NUMBER_CALL_PARAM_1);
             mockedTestInterface.method1NumberArgNumberReturn(NUMBER_CALL_PARAM_1);
-            
+
             let didThrow = false;
             try {
                 verify(mockedTestInterface);
@@ -216,7 +216,7 @@ describe("ES6 class strict test cases", () => {
                 assert.regexMatches(e.message, /Expected at least 3 invocations, got 2.\nExpected at: .*?StrictEs6Class.test.ts:207:13\nCalled at:\n.*?StrictEs6Class.test.ts:209:33\n.*?StrictEs6Class.test.ts:210:33/);
                 didThrow = true;
             }
-            
+
             assert.equal(true, didThrow);
             reset(mockedTestInterface);
         });
@@ -229,7 +229,7 @@ describe("ES6 class strict test cases", () => {
             mockedTestInterface.method1NumberArgNumberReturn(NUMBER_CALL_PARAM_1);
             mockedTestInterface.method1NumberArgNumberReturn(NUMBER_CALL_PARAM_1);
             mockedTestInterface.method1NumberArgNumberReturn(NUMBER_CALL_PARAM_1);
-            
+
             let didThrow = false;
             try {
                 mockedTestInterface.method1NumberArgNumberReturn(NUMBER_CALL_PARAM_1);
@@ -237,16 +237,16 @@ describe("ES6 class strict test cases", () => {
                 assert.regexMatches(e.message, /method1NumberArgNumberReturn\(10\) was called but no expectation matched.\nExpectations:\n\tmethod1NumberArgNumberReturn\(\) with any arguments. Expected between 0 and 3 invocations, so far 3.\n\tExpectation set at .*?StrictEs6Class.test.ts:227:13/);
                 didThrow = true;
             }
-            
+
             assert.equal(true, didThrow);
         });
 
         it("Handles mocks in expected arg names when error is thrown", () => {
             const testClass: TestClass = mock();
             const arg1: TestClass = mock();
-            
+
             expect(testClass.method1AnyArgNumberReturn).withArgs(arg1);
-            
+
             let didThrow = false;
             try {
                 testClass.method1AnyArgNumberReturn(null);
@@ -259,7 +259,80 @@ describe("ES6 class strict test cases", () => {
             reset(testClass, arg1);
         });
 
+        it("should throw if atMost is called twice", () => {
+            const mockedTestInterface = mock(TestClass);
 
+            let didThrow = false;
+            try {
+                expect(mockedTestInterface.method1NumberArgNumberReturn).atMost(3).atMost(4);
+            } catch (e) {
+                assert.regexMatches(e.message, /Previously set expectation count, value must only be set once/);
+                didThrow = true;
+            }
+
+            assert.equal(true, didThrow);
+        });
+
+        it("should throw if atLeast is called twice", () => {
+            const mockedTestInterface = mock(TestClass);
+
+            let didThrow = false;
+            try {
+                expect(mockedTestInterface.method1NumberArgNumberReturn).atLeast(3).atLeast(4);
+            } catch (e) {
+                assert.regexMatches(e.message, /Previously set expectation count, value must only be set once/);
+                didThrow = true;
+            }
+
+            assert.equal(true, didThrow);
+            reset(mockedTestInterface);
+        });
+
+        it("should throw if times is called twice", () => {
+            const mockedTestInterface = mock(TestClass);
+
+            let didThrow = false;
+            try {
+                expect(mockedTestInterface.method1NumberArgNumberReturn).times(3).times(4);
+            } catch (e) {
+                assert.regexMatches(e.message, /Previously set expectation count, value must only be set once/);
+                didThrow = true;
+            }
+
+            assert.equal(true, didThrow);
+            reset(mockedTestInterface);
+        });
+
+        it("should throw if times and atLeast is called", () => {
+            const mockedTestInterface = mock(TestClass);
+
+            let didThrow = false;
+            try {
+                expect(mockedTestInterface.method1NumberArgNumberReturn).atLeast(3).times(4);
+            } catch (e) {
+                assert.regexMatches(e.message, /Previously set expectation count, value must only be set once/);
+                didThrow = true;
+            }
+
+            assert.equal(true, didThrow);
+            reset(mockedTestInterface);
+        });
+
+        it("should throw if times and atMost is called", () => {
+            const mockedTestInterface = mock(TestClass);
+
+            let didThrow = false;
+            try {
+                expect(mockedTestInterface.method1NumberArgNumberReturn).atMost(3).times(4);
+            } catch (e) {
+                assert.regexMatches(e.message, /Previously set expectation count, value must only be set once/);
+                didThrow = true;
+            }
+
+            assert.equal(true, didThrow);
+            reset(mockedTestInterface);
+        });
+        
         it("should throw if times with no args is called with atLeast with specific args", () => {
             const mockedTestInterface = mock(TestClass);
 
@@ -285,7 +358,7 @@ describe("ES6 class strict test cases", () => {
             reset(mockedTestInterface);
         });
 
-        
+
         it("should throw if times is called with atLeast", () => {
             const mockedTestInterface = mock(TestClass);
 
@@ -302,7 +375,7 @@ describe("ES6 class strict test cases", () => {
             reset(mockedTestInterface);
         });
 
-        
+
         it("should check the specificity of the args when checking ranges", () => {
             const mockedTestInterface = mock(TestClass);
 
@@ -343,7 +416,7 @@ describe("ES6 class strict test cases", () => {
             reset(mockedTestInterface);
         });
 
-        
+
         it("should throw if atMost value is less than atLeast, atMost first", () => {
             const mockedTestInterface = mock(TestClass);
 
@@ -389,9 +462,9 @@ describe("ES6 class strict test cases", () => {
         });
 
         it("throws if an invalid mock is passed", () => {
-            const realObject = () => {};
+            const realObject = () => { };
 
-            
+
             let didThrow = false;
             try {
                 expect(realObject).once();
@@ -406,9 +479,9 @@ describe("ES6 class strict test cases", () => {
         it("Handles mocks in expected arg names", () => {
             const testClass: TestClass = mock();
             const arg1: TestClass = mock();
-            
+
             expect(testClass.method1AnyArgNumberReturn).withArgs(arg1);
-            
+
             testClass.method1AnyArgNumberReturn(arg1);
 
             verify(testClass, arg1);
@@ -417,10 +490,10 @@ describe("ES6 class strict test cases", () => {
         it("Handles binding mock functions", () => {
             const testClass: TestClass = mock();
             const arg1: TestClass = mock();
-            
+
             const expected = 20;
             expect(testClass.method1AnyArgNumberReturn).withArgs(arg1).andReturn(expected);
-            
+
             const boundFunction = testClass.method1AnyArgNumberReturn.bind(undefined, arg1);
             const output = boundFunction();
 
@@ -431,10 +504,10 @@ describe("ES6 class strict test cases", () => {
 
         it("Handles binding mock functions 2", () => {
             const testClass: TestClass = mock();
-            
+
             const expected = "30";
             expect(testClass.method1AnyArgStringReturn).withArgs("arg1").andReturn(expected);
-            
+
             const boundFunction = testClass.method1AnyArgStringReturn.bind(undefined, "arg1");
             const output = "testString30000".replace("test", boundFunction());
 
@@ -619,7 +692,7 @@ describe("ES6 class strict test cases", () => {
 
             expect(mockedTestInterface.method2StringArgNumberReturn).once(),
 
-            mockedTestInterface.method2StringArgNumberReturn(STRING_CALL_PARAM_1, STRING_CALL_PARAM_1);
+                mockedTestInterface.method2StringArgNumberReturn(STRING_CALL_PARAM_1, STRING_CALL_PARAM_1);
 
             mockedTestInterface.method1NumberArgNumberReturn(NUMBER_CALL_PARAM_1);
             mockedTestInterface.method1StringArgNumberReturn(STRING_CALL_PARAM_1);
@@ -654,7 +727,7 @@ describe("ES6 class strict test cases", () => {
 
             expect(mockedTestInterface.method2StringArgNumberReturn).once(),
 
-            mockedTestInterface.method1NumberArgNumberReturn(NUMBER_CALL_PARAM_1);
+                mockedTestInterface.method1NumberArgNumberReturn(NUMBER_CALL_PARAM_1);
             mockedTestInterface.method1StringArgNumberReturn(STRING_CALL_PARAM_1);
             mockedTestInterface.method2StringArgNumberReturn(STRING_CALL_PARAM_1, STRING_CALL_PARAM_1);
 
@@ -689,11 +762,11 @@ describe("ES6 class strict test cases", () => {
             mockedTestInterface.method1NumberArgNumberReturn(NUMBER_CALL_PARAM_1);
             mockedTestInterface.method2StringArgNumberReturn(STRING_CALL_PARAM_1, STRING_CALL_PARAM_1);
             mockedTestInterface.method1StringArgNumberReturn(STRING_CALL_PARAM_1);
-            
+
             verify(mockedTestInterface);
         });
 
-        
+
         it("should throw an exception when using `andThrow`", () => {
             const mockedTestInterface = mock(TestClass);
 
@@ -720,11 +793,11 @@ describe("ES6 class strict test cases", () => {
             mockedTestInterface.method1NumberArgNumberReturn(NUMBER_CALL_PARAM_1);
             mockedTestInterface.method1NumberArgNumberReturn(NUMBER_CALL_PARAM_1);
             mockedTestInterface.method1NumberArgNumberReturn(NUMBER_CALL_PARAM_1);
-            
+
             verify(mockedTestInterface);
 
             mockedTestInterface.method1NumberArgNumberReturn(NUMBER_CALL_PARAM_1);
-            
+
             verify(mockedTestInterface);
         });
 
@@ -734,16 +807,147 @@ describe("ES6 class strict test cases", () => {
             expect(mockedTestInterface.method1NumberArgNumberReturn).atMost(3);
 
             mockedTestInterface.method1NumberArgNumberReturn(NUMBER_CALL_PARAM_1);
-            
+
+            verify(mockedTestInterface);
+
+            mockedTestInterface.method1NumberArgNumberReturn(NUMBER_CALL_PARAM_1);
+
             verify(mockedTestInterface);
 
             mockedTestInterface.method1NumberArgNumberReturn(NUMBER_CALL_PARAM_1);
 
             verify(mockedTestInterface);
+        });
 
-            mockedTestInterface.method1NumberArgNumberReturn(NUMBER_CALL_PARAM_1);
-            
+        it("should handle stubReturn", () => {
+            const mockedTestInterface = mock(TestClass);
+
+            const result = 10;
+            expect(mockedTestInterface.method1AnyArgNumberReturn).andStubReturn(result);
+
             verify(mockedTestInterface);
+
+            const actual = mockedTestInterface.method1AnyArgNumberReturn("");
+
+            assert.equal(result, actual);
+            verify(mockedTestInterface);
+        });
+
+        it("should handle stubAnswer", () => {
+            const mockedTestInterface = mock(TestClass);
+            const mockAnswer: Answer<TestClass["method1AnyArgNumberReturn"]> = mock();
+
+            const result = 10;
+            expect(mockedTestInterface.method1AnyArgNumberReturn).andStubAnswer(mockAnswer);
+
+            verify(mockedTestInterface, mockAnswer);
+
+            expect(mockAnswer).andReturn(result).once();
+            const actual = mockedTestInterface.method1AnyArgNumberReturn("");
+
+            assert.equal(result, actual);
+            verify(mockedTestInterface, mockAnswer);
+        });
+
+
+        it("should handle stubResolve", () => {
+            const mockedTestInterface = mock(TestClass);
+
+            const result = 10;
+            expect(mockedTestInterface.methodNoArgPromiseReturn).andStubResolve(result);
+
+            verify(mockedTestInterface);
+
+            return mockedTestInterface.methodNoArgPromiseReturn()
+                .then((value) => {
+                    assert.equal(value, result);
+                    verify(mockedTestInterface);
+                });
+        });
+
+        it("should handle stubReject", () => {
+            const mockedTestInterface = mock(TestClass);
+
+            const result = new Error("huge massive error");
+            expect(mockedTestInterface.methodNoArgPromiseReturn).andStubReject(result);
+
+            verify(mockedTestInterface);
+
+            return mockedTestInterface.methodNoArgPromiseReturn()
+                .catch((error) => {
+                    assert.equal(error, result);
+                    verify(mockedTestInterface);
+                });
+        });
+
+        it("should handle stubResolve", () => {
+            const mockedTestInterface = mock(TestClass);
+
+            const result = 10;
+            expect(mockedTestInterface.methodNoArgPromiseReturn).andStubResolve(result);
+
+            verify(mockedTestInterface);
+
+            return mockedTestInterface.methodNoArgPromiseReturn()
+                .then((value) => {
+                    assert.equal(value, result);
+                    verify(mockedTestInterface);
+                });
+        });
+
+
+        it("should not have a andReturn method if mocked function has a void method", () => {
+            const mockedTestInterface = mock(TestClass);
+
+            // @ts-expect-error 
+            expect(mockedTestInterface.method1AnyArgVoidReturn).andReturn;
+
+            reset(mockedTestInterface);
+        });
+
+        it("should not have a andStubReturn method if mocked function has a void method", () => {
+            const mockedTestInterface = mock(TestClass);
+
+            // @ts-expect-error 
+            expect(mockedTestInterface.method1AnyArgVoidReturn).andStubReturn;
+
+            reset(mockedTestInterface);
+        });
+
+        it("should not have a andResolve method if mocked function does not return a promise method", () => {
+            const mockedTestInterface = mock(TestClass);
+
+            // @ts-expect-error 
+            expect(mockedTestInterface.method1AnyArgNumberReturn).andResolve;
+
+            reset(mockedTestInterface);
+        });
+
+        it("should not have a andStubResolve method if mocked function does not return a promise method", () => {
+            const mockedTestInterface = mock(TestClass);
+
+            // @ts-expect-error 
+            expect(mockedTestInterface.method1AnyArgNumberReturn).andStubResolve;
+
+            reset(mockedTestInterface);
+        });
+
+        it("should not have a andReject method if mocked function does not return a promise method", () => {
+            const mockedTestInterface = mock(TestClass);
+
+            // @ts-expect-error 
+            expect(mockedTestInterface.method1AnyArgNumberReturn).andReject;
+
+            reset(mockedTestInterface);
+        });
+
+        it("should not have a andStubReject method if mocked function does not return a promise method", () => {
+            const mockedTestInterface = mock(TestClass);
+
+            // @ts-expect-error 
+            expect(mockedTestInterface.method1AnyArgNumberReturn).andStubReject;
+
+            reset(mockedTestInterface);
         });
     });
 

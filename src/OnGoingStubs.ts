@@ -1,6 +1,6 @@
 import { ArgumentValidator, eq } from "@umbra-test/umbra-util";
 import { Expect } from "umbra-assert";
-import { ExpectationData, GetInternalMocker, InternalMocker, GetInternalMockerSafe } from "./InternalMocker";
+import { ExpectationData, GetInternalMocker, GetInternalMockerSafe, InternalMocker } from "./InternalMocker";
 import { Answer, MockableFunction } from "./Mock";
 import { ArgumentMatcher } from "./MockedFunction";
 import { Range } from "./Range";
@@ -8,33 +8,54 @@ import { StacktraceUtils } from "./StackTraceParser";
 
 type UnwrapPromise<T extends Promise<any>> = T extends Promise<infer P> ? P : never;
 
-interface OngoingStubbing<F extends MockableFunction> {
+type OngoingStubbing<T extends MockableFunction> = T extends (...args: any) => infer R ? (
+    R extends Promise<any> ? PromiseOnGoingStubbing<T, PromiseOnGoingStubbing<T, any>> :
+    R extends void ? BaseOngoingStubbing<T, BaseOngoingStubbing<T, any>> : ReturnableOnGoingStubbing<T, ReturnableOnGoingStubbing<T, any>>
+) : PromiseOnGoingStubbing<T, PromiseOnGoingStubbing<T, any>>;
 
-    withArgs(...args: Parameters<F>): OngoingStubbing<F>;
+interface PromiseOnGoingStubbing<F extends MockableFunction, G extends PromiseOnGoingStubbing<F, G>> extends ReturnableOnGoingStubbing<F, G> {
 
-    andReturn(...values: ReturnType<F>[]): OngoingStubbing<F>;
+    andResolve(values: UnwrapPromise<ReturnType<F>>): G;
 
-    andStubReturn(...values: ReturnType<F>[]): void;
+    andStubResolve(values: UnwrapPromise<ReturnType<F>>): void;
 
-    andThrow(...error: Error[]): OngoingStubbing<F>;
+    andReject(values: Error): G;
 
-    andResolve(...values: UnwrapPromise<ReturnType<F>>[]): OngoingStubbing<F>;
+    andStubReject(values: Error): void;
 
-    andReject(...values: Error[]): OngoingStubbing<F>;
+}
 
-    andCallRealMethod(): OngoingStubbing<F>;
+interface ReturnableOnGoingStubbing<F extends MockableFunction, G extends ReturnableOnGoingStubbing<F, G>> extends BaseOngoingStubbing<F, G> {
 
-    andAnswer(answer: Answer<F>): OngoingStubbing<F>;
+    andReturn(values: ReturnType<F>): G;
 
-    times(wantedNumberOfInvocations: number): OngoingStubbing<F>;
+    andStubReturn(values: ReturnType<F>): void;
 
-    atLeast(atLeastInvocations: number): OngoingStubbing<F>;
+}
 
-    atMost(atMostInvocations: number): OngoingStubbing<F>;
+interface BaseOngoingStubbing<F extends MockableFunction, G extends BaseOngoingStubbing<F, G>> {
 
-    once(): OngoingStubbing<F>;
+    withArgs(...args: Parameters<F>): G;
 
-    twice(): OngoingStubbing<F>;
+    andThrow(error: Error): G;
+
+    andStubThrow(error: Error): void;
+
+    andCallRealMethod(): G;
+
+    andAnswer(answer: Answer<F>): G;
+
+    andStubAnswer(answer: Answer<F>): void;
+
+    times(wantedNumberOfInvocations: number): G;
+
+    atLeast(atLeastInvocations: number): G;
+
+    atMost(atMostInvocations: number): G;
+
+    once(): G;
+
+    twice(): G;
 
 }
 
@@ -82,7 +103,7 @@ function normalizeMatcherArgs<F extends MockableFunction>(args: Parameters<F>): 
 }
 
 const NOT_SET = -1;
-class OnGoingStubs<F extends MockableFunction> extends Expect implements OngoingStubbing<F> {
+class OnGoingStubs<F extends MockableFunction> extends Expect implements PromiseOnGoingStubbing<F, any> {
 
     public readonly internalMocker: InternalMocker<F>;
     private currentArgumentExpectations: ArgumentMatcher;
@@ -120,7 +141,7 @@ class OnGoingStubs<F extends MockableFunction> extends Expect implements Ongoing
         return this;
     }
 
-    public andReturn(value: ReturnType<F>): OngoingStubbing<F> {
+    public andReturn(value: ReturnType<F>): PromiseOnGoingStubbing<F, any> {
         this.expectation.answer = createDirectReturnAnswer(value);
         return this;
     }
@@ -130,12 +151,17 @@ class OnGoingStubs<F extends MockableFunction> extends Expect implements Ongoing
         this.atLeast(0);
     }
 
-    public andThrow(error: Error): OngoingStubbing<F> {
+    public andThrow(error: Error): PromiseOnGoingStubbing<F, any> {
         this.expectation.answer = createDirectThrowAnswer(error);
         return this;
     }
 
-    public andCallRealMethod(): OngoingStubbing<F> {
+    public andStubThrow(error: Error): void {
+        this.expectation.answer = createDirectThrowAnswer(error);
+        this.atLeast(0);
+    }
+
+    public andCallRealMethod(): PromiseOnGoingStubbing<F, any> {
         const realFunction = this.internalMocker.realFunction;
         if (!realFunction) {
             throw new Error("No function was available. Ensure a real object was passed to the spy");
@@ -145,22 +171,37 @@ class OnGoingStubs<F extends MockableFunction> extends Expect implements Ongoing
         return this;
     }
 
-    public andAnswer(answer: Answer<ReturnType<F>>): OngoingStubbing<F> {
+    public andAnswer(answer: Answer<ReturnType<F>>): PromiseOnGoingStubbing<F, any> {
         this.expectation.answer = answer;
         return this;
     }
 
-    public andResolve(value: UnwrapPromise<ReturnType<F>>): OngoingStubbing<F> {
+    public andStubAnswer(answer: Answer<ReturnType<F>>): void {
+        this.expectation.answer = answer;
+        this.atLeast(0);
+    }
+
+    public andResolve(value: UnwrapPromise<ReturnType<F>>): PromiseOnGoingStubbing<F, any> {
         this.expectation.answer = createPromiseResolveAnswer(value);
         return this;
     }
 
-    public andReject(error: Error): OngoingStubbing<F> {
+    public andStubResolve(value: UnwrapPromise<ReturnType<F>>): void {
+        this.expectation.answer = createPromiseResolveAnswer(value);
+        this.atLeast(0);
+    }
+
+    public andReject(error: Error): PromiseOnGoingStubbing<F, any> {
         this.expectation.answer = createPromiseRejectAnswer(error);
         return this;
     }
 
-    public times(count: number): OngoingStubbing<F> {
+    public andStubReject(error: Error): void {
+        this.expectation.answer = createPromiseRejectAnswer(error);
+        this.atLeast(0);
+    }
+
+    public times(count: number): PromiseOnGoingStubbing<F, any> {
         if (this.timesCount !== NOT_SET || this.atLeastCount !== NOT_SET || this.atMostCount !== NOT_SET) {
             throw new Error("Previously set expectation count, value must only be set once");
         }
@@ -170,15 +211,15 @@ class OnGoingStubs<F extends MockableFunction> extends Expect implements Ongoing
         return this;
     }
 
-    public once(): OngoingStubbing<F> {
+    public once(): PromiseOnGoingStubbing<F, any> {
         return this.times(1);
     }
 
-    public twice(): OngoingStubbing<F> {
+    public twice(): PromiseOnGoingStubbing<F, any> {
         return this.times(2);
     }
 
-    public atMost(atMostInvocations: number): OngoingStubbing<F> {
+    public atMost(atMostInvocations: number): PromiseOnGoingStubbing<F, any> {
         if (this.timesCount !== NOT_SET || (this.atMostCount !== NOT_SET && this.atMostCount !== Number.MAX_SAFE_INTEGER)) {
             throw new Error("Previously set expectation count, value must only be set once");
         }
@@ -189,7 +230,7 @@ class OnGoingStubs<F extends MockableFunction> extends Expect implements Ongoing
         return this;
     }
 
-    public atLeast(atLeastInvocations: number): OngoingStubbing<F> {
+    public atLeast(atLeastInvocations: number): PromiseOnGoingStubbing<F, any> {
         if (this.timesCount !== NOT_SET || (this.atLeastCount !== NOT_SET && this.atLeastCount !== 0)) {
             throw new Error("Previously set expectation count, value must only be set once");
         }
@@ -235,4 +276,4 @@ class OnGoingStubs<F extends MockableFunction> extends Expect implements Ongoing
     }
 }
 
-export { OnGoingStubs, OngoingStubbing, normalizeMatcherArgs };
+export { OnGoingStubs, OngoingStubbing, BaseOngoingStubbing, normalizeMatcherArgs };
