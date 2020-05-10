@@ -1,4 +1,4 @@
-import { mock, verify, expect } from "..";
+import { mock, verify, expect, reset } from "..";
 import { assert } from "umbra-assert";
 import "mocha";
 
@@ -43,7 +43,9 @@ describe("Interface test cases", () => {
         it("mocks overloaded function correctly", () => {
             const testInterface = mock<FakeEventEmitter>();
             const callback: () => void = mock();
-            expect(testInterface.on).withArgs("close", callback)
+            expect(testInterface.on).withArgs("close", callback);
+
+            reset(testInterface);
         });
     });
 
@@ -69,11 +71,12 @@ describe("Interface test cases", () => {
             try {
                 assert.equal(MOCK_RETURN_VAL, mockedFunction());
             } catch (e) {
-                assert.regexMatches(e.message, /mockedFunction\(\) was called but no expectation matched.\nExpectations:\n\tmockedFunction\(""\). Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictInterface.test.ts:66:13/);
+                assert.regexMatches(e.message, /mockedFunction\(\) was called but no expectation matched.\nExpectations:\n\tmockedFunction\(""\). Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictInterface.test.ts:68:13/);
                 didThrow = true;
             }
 
             assert.equal(true, didThrow);
+            reset(mockedFunction);
         });
 
         it("should throw if no args match with optional args", () => {
@@ -87,10 +90,11 @@ describe("Interface test cases", () => {
                 mockedFunction("noMatch");
             } catch (e) {
                 didThrow = true;
-                assert.regexMatches(e.message, /mock\("noMatch"\) was called but no expectation matched.\nExpectations:\n\tmock\("arg"\). Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictInterface.test.ts:82:13\n\n\tmock\(\). Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictInterface.test.ts:83:13\n/)
+                assert.regexMatches(e.message, /mock\("noMatch"\) was called but no expectation matched.\nExpectations:\n\tmock\("arg"\). Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictInterface.test.ts:85:13\n\n\tmock\(\). Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictInterface.test.ts:86:13\n/)
             }
 
             assert.equal(true, didThrow);
+            reset(mockedFunction);
         });
 
         it("supports named mock in verify error messages", () => {
@@ -102,11 +106,12 @@ describe("Interface test cases", () => {
             try {
                 verify(mockedFunction);
             } catch (e) {
-                assert.regexMatches(e.message, /Expected 1 invocations, got 0\.\nExpected at: .*?StrictInterface.test.ts:99:13/);
+                assert.regexMatches(e.message, /Expected 1 invocations, got 0\.\nExpected at: .*?StrictInterface.test.ts:103:13/);
                 didThrow = true;
             }
 
             assert.equal(true, didThrow);
+            reset(mockedFunction);
         });
 
         it("Handles binding mock functions", () => {

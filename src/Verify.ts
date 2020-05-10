@@ -15,7 +15,42 @@ function verify(...mocks: any[]): void {
     }
 }
 
-function verifyMock<F extends MockableFunction>(mock: any) {
+function reset(...mocks: any[]): void {
+    for (const mock of mocks) {
+        resetMock(mock);
+    }
+}
+
+function resetMock<F extends MockableFunction>(mock: any): void {
+    const internalMocker: InternalMocker<F> = GetInternalMocker(mock);
+
+    const test = Object.keys(mock);
+    for (const key of test) {
+        if (key === INTERNAL_MOCKER_NAME) {
+            continue;
+        }
+        const value = mock[key];
+        if (value) {
+            const internalFunctionMocker = GetInternalMocker(value);
+            if (internalFunctionMocker) {
+                resetMock(value);
+            }
+        }
+    }
+
+    internalMocker.isInExpectation = false;
+    clearArray(internalMocker.expectations);
+    clearArray(internalMocker.inProgressInOrder);
+    clearArray(internalMocker.recordedInvocations);
+}
+
+function clearArray(array: any[]): void {
+    while (array.length > 0) {
+        array.shift();
+    }
+}
+
+function verifyMock<F extends MockableFunction>(mock: any): void {
     const internalMocker: InternalMocker<F> = GetInternalMocker(mock);
 
     const test = Object.keys(mock);
@@ -65,5 +100,6 @@ function buildCallLocations<F extends MockableFunction>(expectedArgs: ArgumentMa
 }
 
 export {
+    reset,
     verify
 };

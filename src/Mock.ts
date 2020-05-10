@@ -1,6 +1,7 @@
 import { CreateInternalMocker, ExpectationData, INTERNAL_MOCKER_NAME } from "./InternalMocker";
 import { createMockedFunction } from "./MockedFunction";
 import { OngoingStubbing, OnGoingStubs } from "./OnGoingStubs";
+import { createdMocks } from "./UmbraTestRunnerIntegration";
 
 type Answer<F extends MockableFunction> = (...args: Parameters<F>) => ReturnType<F>;
 type MockableFunction = (...args: any[]) => any;
@@ -145,9 +146,8 @@ function setDefaultOptions(options: Partial<MockOptions>) {
 function mock<T>(object?: ClassConstructor<T>, mockName?: string): T;
 function mock<T extends object>(mockName: string): T;
 function mock<T extends object>(clazz?: ClassConstructor<T> | string,
-                                mockName?: string | null,
-                                options: MockOptions = defaultOptions): T
-{
+    mockName?: string | null,
+    options: MockOptions = defaultOptions): T {
     // Passing a stub function here allows us to pass functions as well as objects to the proxy. This is because the
     // function is both an object and marked as [[Callable]]
     const stubFunction = (() => { /* intentionally blank */ }) as T;
@@ -159,8 +159,11 @@ function mock<T extends object>(clazz?: ClassConstructor<T> | string,
         mockName = null;
     }
 
-    return new Proxy<T>(stubFunction,
-        new InvocationHandler<T>(clazz ? clazz.prototype : null, stubFunction, mockName, options));
+    const proxy = new Proxy<T>(stubFunction, new InvocationHandler<T>(clazz ? clazz.prototype : null, stubFunction, mockName, options));
+    if (createdMocks) {
+        createdMocks.push(proxy);
+    }
+    return proxy;
 }
 
 function spy<T extends object>(realObject: T, options: MockOptions = defaultOptions) {
@@ -180,7 +183,7 @@ interface InOrderExpectation {
 function inOrder(...stubs: OngoingStubbing<any>[]) {
     const inOrderExpectation: InOrderExpectation = {
         expectations: [],
-        currentIndex : 0
+        currentIndex: 0
     };
     const castStubs = stubs as OnGoingStubs<any>[];
     for (const stub of castStubs) {

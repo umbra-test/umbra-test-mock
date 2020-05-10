@@ -1,2 +1,3 @@
 declare function verify(...mocks: any[]): void;
-export { verify };
+declare function reset(...mocks: any[]): void;
+export { reset, verify };
