@@ -1,14 +1,14 @@
 {
   "name": "umbra-test-mock",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Mocking library included with the Umbra Test packages.",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
   "license": "MIT",
   "scripts": {
-    "build": "tsc",
-    "watch-build": "(tsc -w &) && (tsc -w -p tsconfig-test.json)",
-    "test": "tsc -p tsconfig-test.json && nyc mocha --require source-map-support/register --recursive lib/tests/**/*.test.js",
+    "build": "npx tsc",
+    "watch-build": "(npx tsc -w &) && (npx tsc -w -p tsconfig-test.json)",
+    "test": "npx tsc -p tsconfig-test.json && nyc mocha --require source-map-support/register --recursive lib/tests/**/*.test.js",
     "lint": "tslint --project .",
     "fixlinks": "npm link @umbra-test/umbra-util && npm link umbra-assert",
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
@@ -38,11 +38,11 @@
     ]
   },
   "dependencies": {
-    "@types/node": "^13.13.0",
-    "umbra-assert": "0.0.3",
-    "@umbra-test/umbra-util": "^0.0.3"
+    "umbra-assert": "0.0.4",
+    "@umbra-test/umbra-util": "0.0.4"
   },
   "devDependencies": {
+    "@types/node": "^13.13.0",
     "@types/chai": "^4.1.7",
     "@types/mocha": "^5.2.7",
     "@types/source-map-support": "^0.5.0",
@@ -51,7 +51,7 @@
     "nyc": "^15.0.0",
     "source-map-support": "^0.5.11",
     "tslint": "^5.14.0",
-    "typescript": "^3.5.3"
+    "typescript": "^3.9.2"
   },
   "repository": {
     "type": "git",
