@@ -8,7 +8,7 @@
   "scripts": {
     "build": "npx tsc",
     "watch-build": "(npx tsc -w &) && (npx tsc -w -p tsconfig-test.json)",
-    "test": "npx tsc -p tsconfig-test.json && nyc mocha --require source-map-support/register --recursive lib/tests/**/*.test.js",
+    "test": "npx tsc -p tsconfig-test.json && mocha --require source-map-support/register --recursive lib/tests/**/*.test.js",
     "lint": "tslint --project .",
     "fixlinks": "npm link @umbra-test/umbra-util && npm link umbra-assert",
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
