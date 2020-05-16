@@ -1,7 +1,7 @@
 import { verify } from "./Verify";
 
 let createdMocks: any | null = null;
-const umbraTestRunner = (global as any)["__testRunner"];
+const umbraTestRunner = (global as any).__testRunner;
 if (umbraTestRunner) {
     createdMocks = [];
     umbraTestRunner.on("testSuccess", () => {
