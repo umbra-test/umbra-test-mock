@@ -1,7 +1,6 @@
 import { mock, expect, verify, newCapture, Capture } from "..";
 import { TestClass } from "./TestClass";
 import { assert } from "umbra-assert";
-import "mocha";
 
 interface ConflictingCaptureInterface {
     all: number[];

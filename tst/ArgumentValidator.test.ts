@@ -2,7 +2,6 @@ import { mock, expect, verify } from ".."
 import { any, matcher, gt, gte, lt, lte, startsWith, regexMatches } from "@umbra-test/umbra-util";
 import { TestClass } from "./TestClass";
 import { assert } from "umbra-assert";
-import "mocha";
 
 describe("Argument validator test cases", () => {
 

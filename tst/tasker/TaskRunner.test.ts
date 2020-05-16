@@ -1,7 +1,8 @@
 import { TaskRunner } from "./TaskRunner";
 import { Task, AsyncTask } from "./Task";
 import { mock, verify, expect, inOrder } from "../..";
-import { assert } from "chai";
+import { assert } from "umbra-assert";
+import "umbra-test";
 
 type OnTaskStart = (taskName: string, taskDependencies: string[]) => void;
 type OnTaskEnd = (taskName: string) => void;
@@ -494,13 +495,13 @@ describe("TaskRunner", () => {
 
     describe("getTaskList", () => {
         it("should return an empty map if no tasks are added", () => {
-            assert.deepEqual(taskRunner.getTaskList(), {});
+            assert.equal(taskRunner.getTaskList(), {});
         });
 
         it("should return a single task if only one task exists", () => {
             const task: Task<any> = mock();
             taskRunner.addTask("root", task);
-            assert.deepEqual(taskRunner.getTaskList(), {
+            assert.equal(taskRunner.getTaskList(), {
                 "root": []
             });
             verify(task);
@@ -511,7 +512,7 @@ describe("TaskRunner", () => {
             addTask("child1", ["child2"]);
             addTask("root", ["child1", "child2"]);
 
-            assert.deepEqual(taskRunner.getTaskList(), {
+            assert.equal(taskRunner.getTaskList(), {
                 "child2": [],
                 "child1": ["child2"],
                 "root": ["child1", "child2"]

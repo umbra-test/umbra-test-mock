@@ -8,7 +8,7 @@
   "scripts": {
     "build": "npx tsc",
     "watch-build": "(npx tsc -w &) && (npx tsc -w -p tsconfig-test.json)",
-    "test": "npx tsc -p tsconfig-test.json && mocha --require source-map-support/register --recursive lib/tests/**/*.test.js",
+    "test": "npx tsc -p tsconfig-test.json && npx umbra",
     "lint": "tslint --project .",
     "fixlinks": "npm link @umbra-test/umbra-util && npm link umbra-assert",
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
@@ -43,15 +43,12 @@
   },
   "devDependencies": {
     "@types/node": "^13.13.0",
-    "@types/chai": "^4.1.7",
-    "@types/mocha": "^5.2.7",
     "@types/source-map-support": "^0.5.0",
-    "chai": "^4.2.0",
-    "mocha": "^5.2.0",
     "nyc": "^15.0.0",
     "source-map-support": "^0.5.11",
     "tslint": "^5.14.0",
-    "typescript": "^3.9.2"
+    "typescript": "^3.9.2",
+    "umbra-test": "^0.0.5"
   },
   "repository": {
     "type": "git",

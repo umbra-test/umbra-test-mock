@@ -1,10 +1,10 @@
 import { mock, verify, expect, reset } from "..";
 import { assert } from "umbra-assert";
-import "mocha";
 
 interface TestInterface {
 
     exampleMethod(): string;
+    
 }
 
 interface InterfaceFunction {

@@ -1,6 +1,5 @@
 import { expect, inOrder, mock, verify, any  } from "..";
 import { assert } from "umbra-assert";
-import "mocha";
 
 type Callback<T> = (item: T) => void;
 function forEach<T>(items: T[], callback: Callback<T>) {
