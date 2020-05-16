@@ -1,10 +1,10 @@
 import {
     ExpectationData,
     GetInternalMocker,
+    GetInternalMockerSafe,
     INTERNAL_MOCKER_NAME,
     InternalMocker,
-    RecordedInvocation,
-    GetInternalMockerSafe
+    RecordedInvocation
 } from "./InternalMocker";
 import { MockableFunction } from "./Mock";
 import { ArgumentMatcher } from "./MockedFunction";
