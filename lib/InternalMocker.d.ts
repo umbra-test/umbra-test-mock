@@ -16,8 +16,9 @@ interface RecordedInvocation<F extends MockableFunction> {
     readonly location: string | null;
 }
 declare enum MockType {
-    Full = 0,
-    Partial = 1
+    Instance = 0,
+    Static = 1,
+    Partial = 2
 }
 interface InternalMocker<F extends MockableFunction> {
     readonly expectations: ExpectationData<F>[];

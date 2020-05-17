@@ -1,20 +1,25 @@
-import { mock, reset, verify, expect, partialMock, any, inOrder, Answer, eq } from "..";
+import { mock, reset, verify, expect, partialMock, staticMock, inOrder, Answer } from "..";
 import { assert } from "umbra-assert";
-import { TestClass, REAL_NUMBER_RETURN_VALUE } from "./TestClass";
+import { TestClass, REAL_NUMBER_RETURN_VALUE, SecondLevelTestClass, ThirdLevelTestClass } from "./TestClass";
+import { escapeRegex, getLineNumber } from "./TestUtils";
 import * as os from "os";
 import * as process from "process";
 
 const MOCK_RETURN_VALUE = 100;
 const NUMBER_CALL_PARAM_1 = 10;
 const STRING_CALL_PARAM_1 = "callParam1";
-describe("ES6 class strict test cases", () => {
+const STRING_FIELD = "stringField";
+const DATE_FIELD = new Date();
+const REGEX_FIELD = /.*/;
+const fileName = escapeRegex("StrictEs6Class.test.ts");
 
-    describe("mock", () => {
-        // Putting all the error messages first
+describe("ES6 class strict test cases", () => {
+    describe("Error messages", () => {
+
         it("should throw if the expectation already matched its count", () => {
             const mockedTestInterface = mock(TestClass);
 
-            expect(mockedTestInterface.method1StringArgNumberReturn).once();
+            expect(mockedTestInterface.method1StringArgNumberReturn).once(); const lineNumber = getLineNumber();
 
             mockedTestInterface.method1StringArgNumberReturn(STRING_CALL_PARAM_1);
 
@@ -23,7 +28,7 @@ describe("ES6 class strict test cases", () => {
                 mockedTestInterface.method1StringArgNumberReturn(STRING_CALL_PARAM_1);
             } catch (e) {
                 didThrow = true;
-                assert.regexMatches(e.message, /method1StringArgNumberReturn\("callParam1"\) was called but no expectation matched.\nExpectations:\n\tmethod1StringArgNumberReturn\(\) with any arguments. Expected 1 invocations, so far 1.\n\tExpectation set at .*?StrictEs6Class.test.ts:17:13/);
+                assert.regexMatches(e.message, new RegExp(`method1StringArgNumberReturn\\("callParam1"\\) was called but no expectation matched.\nExpectations:\n\tmethod1StringArgNumberReturn\\(\\) with any arguments. Expected 1 invocations, so far 1.\n\tExpectation set at .*?${fileName}:${lineNumber}:13`));
             }
 
             assert.equal(didThrow, true);
@@ -33,15 +38,15 @@ describe("ES6 class strict test cases", () => {
         it("should fail if no expectation matches and print the expectations", () => {
             const mockedTestInterface = mock(TestClass);
 
-            expect(mockedTestInterface.method1StringArgNumberReturn).withArgs("randoString").andReturn(REAL_NUMBER_RETURN_VALUE);
-            expect(mockedTestInterface.method1StringArgNumberReturn).withArgs("callPraam1").andReturn(-1);
+            expect(mockedTestInterface.method1StringArgNumberReturn).withArgs("randoString").andReturn(REAL_NUMBER_RETURN_VALUE); const lineNumber = getLineNumber();
+            expect(mockedTestInterface.method1StringArgNumberReturn).withArgs("callPraam1").andReturn(-1); const lineNumber2 = getLineNumber();
 
             let didThrow = false;
             try {
                 mockedTestInterface.method1StringArgNumberReturn(STRING_CALL_PARAM_1);
             } catch (e) {
                 didThrow = true;
-                assert.regexMatches(e.message, /method1StringArgNumberReturn\("callParam1"\) was called but no expectation matched.\nExpectations:\n\tmethod1StringArgNumberReturn\("randoString"\). Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictEs6Class.test\.ts:36:13\n\n\tmethod1StringArgNumberReturn\("callPraam1"\). Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictEs6Class.test\.ts:37:13\n/);
+                assert.regexMatches(e.message, new RegExp(`method1StringArgNumberReturn\\("callParam1"\\) was called but no expectation matched.\nExpectations:\n\tmethod1StringArgNumberReturn\\("randoString"\\). Expected 1 invocations, so far 0.\n\tExpectation set at .*?${fileName}:${lineNumber}:13\n\n\tmethod1StringArgNumberReturn\\("callPraam1"\\). Expected 1 invocations, so far 0.\n\tExpectation set at .*?${fileName}:${lineNumber2}:13\n`));
             }
 
             assert.equal(didThrow, true);
@@ -51,14 +56,14 @@ describe("ES6 class strict test cases", () => {
         it("should fail verify if not called enough times", () => {
             const mockedTestInterface = mock(TestClass);
 
-            expect(mockedTestInterface.method1StringArgNumberReturn).andReturn(REAL_NUMBER_RETURN_VALUE);
+            expect(mockedTestInterface.method1StringArgNumberReturn).andReturn(REAL_NUMBER_RETURN_VALUE); const lineNumber = getLineNumber();
 
             let didThrow = false;
             try {
                 verify(mockedTestInterface);
             } catch (e) {
                 didThrow = true;
-                assert.regexMatches(e.message, /Expected 1 invocations, got 0\.\nExpected at: .*?StrictEs6Class.test\.ts:54:13/);
+                assert.regexMatches(e.message, new RegExp(`Expected 1 invocations, got 0\.\nExpected at: .*?${fileName}:${lineNumber}:13`));
             }
 
             assert.equal(didThrow, true);
@@ -68,17 +73,17 @@ describe("ES6 class strict test cases", () => {
         it("should throw if mocked value is not called three times when expected", () => {
             const mockedTestInterface = mock(TestClass);
 
-            expect(mockedTestInterface.method1StringArgNumberReturn).andReturn(MOCK_RETURN_VALUE).times(3);
+            expect(mockedTestInterface.method1StringArgNumberReturn).andReturn(MOCK_RETURN_VALUE).times(3); const lineNumber = getLineNumber();
 
-            assert.equal(mockedTestInterface.method1StringArgNumberReturn(STRING_CALL_PARAM_1), MOCK_RETURN_VALUE);
-            assert.equal(mockedTestInterface.method1StringArgNumberReturn(STRING_CALL_PARAM_1), MOCK_RETURN_VALUE);
+            assert.equal(mockedTestInterface.method1StringArgNumberReturn(STRING_CALL_PARAM_1), MOCK_RETURN_VALUE); const lineNumber2 = getLineNumber()
+            assert.equal(mockedTestInterface.method1StringArgNumberReturn(STRING_CALL_PARAM_1), MOCK_RETURN_VALUE); const lineNumber3 = getLineNumber()
 
             let didThrow = false;
             try {
                 verify(mockedTestInterface);
             } catch (e) {
                 didThrow = true;
-                assert.regexMatches(e.message, /Expected 3 invocations, got 2.\nExpected at: .*?StrictEs6Class.test\.ts:71:13\nCalled at:\n.*?StrictEs6Class.test\.ts:73:46\n.*?StrictEs6Class.test\.ts:74:46\n/);
+                assert.regexMatches(e.message, new RegExp(`Expected 3 invocations, got 2.\nExpected at: .*?${fileName}:${lineNumber}:13\nCalled at:\n.*?${fileName}:${lineNumber2}:46\n.*?${fileName}:${lineNumber3}:46\n`));
             }
 
             assert.equal(didThrow, true);
@@ -88,20 +93,23 @@ describe("ES6 class strict test cases", () => {
         it("should throw if first in order expectation is called out of order", () => {
             const mockedTestInterface = mock(TestClass);
 
+            const lineNumber = getLineNumber() + 2;
             inOrder(
                 expect(mockedTestInterface.method1NumberArgNumberReturn).once(),
                 expect(mockedTestInterface.method1StringArgNumberReturn).once(),
                 expect(mockedTestInterface.method2StringArgNumberReturn).once(),
             );
 
+            let lineNumber2;
             let didThrow = false;
             try {
+                lineNumber2 = getLineNumber() + 1;
                 mockedTestInterface.method2StringArgNumberReturn(STRING_CALL_PARAM_1, STRING_CALL_PARAM_1);
                 mockedTestInterface.method1StringArgNumberReturn(STRING_CALL_PARAM_1);
                 mockedTestInterface.method1NumberArgNumberReturn(NUMBER_CALL_PARAM_1);
                 verify(mockedTestInterface);
             } catch (e) {
-                assert.regexMatches(e.message, /Out of order method call.\nExpected:\n\tmethod1NumberArgNumberReturn\(\) with any arguments. Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictEs6Class.test\.ts:92:17\n\nActual:\n\tmethod2StringArgNumberReturn\(\) with any arguments. Expected 1 invocations, so far 0.\n\tCalled at.*?StrictEs6Class.test.ts:99:37/);
+                assert.regexMatches(e.message, new RegExp(`Out of order method call.\nExpected:\n\tmethod1NumberArgNumberReturn\\(\\) with any arguments. Expected 1 invocations, so far 0.\n\tExpectation set at .*?${fileName}:${lineNumber}:17\n\nActual:\n\tmethod2StringArgNumberReturn\\(\\) with any arguments. Expected 1 invocations, so far 0.\n\tCalled at.*?${fileName}:${lineNumber2}:37`));
                 didThrow = true;
             }
 
@@ -112,20 +120,22 @@ describe("ES6 class strict test cases", () => {
         it("should throw if second in order expectation is called out of order", () => {
             const mockedTestInterface = mock(TestClass);
 
+            const lineNumber = getLineNumber() + 3;
             inOrder(
                 expect(mockedTestInterface.method1NumberArgNumberReturn).once(),
                 expect(mockedTestInterface.method1StringArgNumberReturn).once(),
                 expect(mockedTestInterface.method2StringArgNumberReturn).once(),
             );
 
+            let lineNumber2;
             let didThrow = false;
             try {
-                mockedTestInterface.method1NumberArgNumberReturn(NUMBER_CALL_PARAM_1);
+                mockedTestInterface.method1NumberArgNumberReturn(NUMBER_CALL_PARAM_1); lineNumber2 = getLineNumber() + 1;
                 mockedTestInterface.method2StringArgNumberReturn(STRING_CALL_PARAM_1, STRING_CALL_PARAM_1);
                 mockedTestInterface.method1StringArgNumberReturn(STRING_CALL_PARAM_1);
                 verify(mockedTestInterface);
             } catch (e) {
-                assert.regexMatches(e.message, /Out of order method call.\nExpected:\n\tmethod1StringArgNumberReturn\(\) with any arguments. Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictEs6Class.test\.ts:117:17\n\nActual:\n\tmethod2StringArgNumberReturn\(\) with any arguments. Expected 1 invocations, so far 0.\n\tCalled at .*?StrictEs6Class.test.ts:124:37/);
+                assert.regexMatches(e.message, new RegExp(`Out of order method call.\nExpected:\n\tmethod1StringArgNumberReturn\\(\\) with any arguments. Expected 1 invocations, so far 0.\n\tExpectation set at .*?${fileName}:${lineNumber}:17\n\nActual:\n\tmethod2StringArgNumberReturn\\(\\) with any arguments. Expected 1 invocations, so far 0.\n\tCalled at .*?${fileName}:${lineNumber2}:37`));
                 didThrow = true;
             }
 
@@ -136,6 +146,7 @@ describe("ES6 class strict test cases", () => {
         it("should throw if previous in order call is called out of order", () => {
             const mockedTestInterface = mock(TestClass);
 
+            const lineNumber = getLineNumber() + 2;
             inOrder(
                 expect(mockedTestInterface.method1NumberArgNumberReturn).once(),
                 expect(mockedTestInterface.method1StringArgNumberReturn).once(),
@@ -149,7 +160,7 @@ describe("ES6 class strict test cases", () => {
                 mockedTestInterface.method1NumberArgNumberReturn(NUMBER_CALL_PARAM_1);
                 verify(mockedTestInterface);
             } catch (e) {
-                assert.regexMatches(e.message, /method1NumberArgNumberReturn\(10\) was called but no expectation matched.\nExpectations:\n\tmethod1NumberArgNumberReturn\(\) with any arguments. Expected 1 invocations, so far 1.\n\tExpectation set at .*?StrictEs6Class.test.ts:140:17/);
+                assert.regexMatches(e.message, new RegExp(`method1NumberArgNumberReturn\\(10\\) was called but no expectation matched.\nExpectations:\n\tmethod1NumberArgNumberReturn\\(\\) with any arguments. Expected 1 invocations, so far 1.\n\tExpectation set at .*?${fileName}:${lineNumber}:17`));
                 didThrow = true;
             }
 
@@ -161,17 +172,20 @@ describe("ES6 class strict test cases", () => {
             const mockInterface1 = mock(TestClass);
             const mockInterface2 = mock(TestClass);
 
+            const lineNumber = getLineNumber() + 2;
             inOrder(
                 expect(mockInterface1.method1StringArgNumberReturn).once(),
                 expect(mockInterface2.method1StringArgNumberReturn).once(),
             );
 
+            let lineNumber2;
             let didThrow = false;
             try {
+                lineNumber2 = getLineNumber() + 1;
                 mockInterface2.method1StringArgNumberReturn(STRING_CALL_PARAM_1);
                 mockInterface1.method1StringArgNumberReturn(STRING_CALL_PARAM_1);
             } catch (e) {
-                assert.regexMatches(e.message, /Out of order method call.\nExpected:\n\tmethod1StringArgNumberReturn\(\) with any arguments. Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictEs6Class.test\.ts:165:17\n\nActual:\n\tmethod1StringArgNumberReturn\(\) with any arguments. Expected 1 invocations, so far 0.\n\tCalled at .*?StrictEs6Class.test.ts:171:32/);
+                assert.regexMatches(e.message, new RegExp(`Out of order method call.\nExpected:\n\tmethod1StringArgNumberReturn\\(\\) with any arguments. Expected 1 invocations, so far 0.\n\tExpectation set at .*?${fileName}:${lineNumber}:17\n\nActual:\n\tmethod1StringArgNumberReturn\\(\\) with any arguments. Expected 1 invocations, so far 0.\n\tCalled at .*?${fileName}:${lineNumber2}:32`));
                 didThrow = true;
             }
 
@@ -183,17 +197,20 @@ describe("ES6 class strict test cases", () => {
             const mockInterface1 = mock(TestClass, "mockInterface1");
             const mockInterface2 = mock(TestClass, "mockInterface2");
 
+            const lineNumber = getLineNumber() + 2;
             inOrder(
                 expect(mockInterface1.method1StringArgNumberReturn).once(),
                 expect(mockInterface2.method1StringArgNumberReturn).once(),
             );
 
+            let lineNumber2;
             let didThrow = false;
             try {
+                lineNumber2 = getLineNumber() + 1;
                 mockInterface2.method1StringArgNumberReturn(STRING_CALL_PARAM_1);
                 mockInterface1.method1StringArgNumberReturn(STRING_CALL_PARAM_1);
             } catch (e) {
-                assert.regexMatches(e.message, /Out of order method call.\nExpected:\n\tmockInterface1.method1StringArgNumberReturn\(\) with any arguments. Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictEs6Class.test\.ts:187:17\n\nActual:\n\tmockInterface2.method1StringArgNumberReturn\(\) with any arguments. Expected 1 invocations, so far 0.\n\tCalled at .*?StrictEs6Class.test.ts:193:32/);
+                assert.regexMatches(e.message, new RegExp(`Out of order method call.\nExpected:\n\tmockInterface1.method1StringArgNumberReturn\\(\\) with any arguments. Expected 1 invocations, so far 0.\n\tExpectation set at .*?${fileName}:${lineNumber}:17\n\nActual:\n\tmockInterface2.method1StringArgNumberReturn\\(\\) with any arguments. Expected 1 invocations, so far 0.\n\tCalled at .*?${fileName}:${lineNumber2}:32`));
                 didThrow = true;
             }
 
@@ -204,16 +221,16 @@ describe("ES6 class strict test cases", () => {
         it("should throw if less than atLeast expectation", () => {
             const mockedTestInterface = mock(TestClass);
 
-            expect(mockedTestInterface.method1NumberArgNumberReturn).atLeast(3);
+            expect(mockedTestInterface.method1NumberArgNumberReturn).atLeast(3); const lineNumber = getLineNumber();
 
-            mockedTestInterface.method1NumberArgNumberReturn(NUMBER_CALL_PARAM_1);
-            mockedTestInterface.method1NumberArgNumberReturn(NUMBER_CALL_PARAM_1);
+            mockedTestInterface.method1NumberArgNumberReturn(NUMBER_CALL_PARAM_1); const lineNumber2 = getLineNumber();
+            mockedTestInterface.method1NumberArgNumberReturn(NUMBER_CALL_PARAM_1); const lineNumber3 = getLineNumber();
 
             let didThrow = false;
             try {
                 verify(mockedTestInterface);
             } catch (e) {
-                assert.regexMatches(e.message, /Expected at least 3 invocations, got 2.\nExpected at: .*?StrictEs6Class.test.ts:207:13\nCalled at:\n.*?StrictEs6Class.test.ts:209:33\n.*?StrictEs6Class.test.ts:210:33/);
+                assert.regexMatches(e.message, new RegExp(`Expected at least 3 invocations, got 2.\nExpected at: .*?${fileName}:${lineNumber}:13\nCalled at:\n.*?${fileName}:${lineNumber2}:33\n.*?${fileName}:${lineNumber3}:33`));
                 didThrow = true;
             }
 
@@ -224,7 +241,7 @@ describe("ES6 class strict test cases", () => {
         it("should throw if less than atMost expectation", () => {
             const mockedTestInterface = mock(TestClass);
 
-            expect(mockedTestInterface.method1NumberArgNumberReturn).atMost(3);
+            expect(mockedTestInterface.method1NumberArgNumberReturn).atMost(3); const lineNumber = getLineNumber();
 
             mockedTestInterface.method1NumberArgNumberReturn(NUMBER_CALL_PARAM_1);
             mockedTestInterface.method1NumberArgNumberReturn(NUMBER_CALL_PARAM_1);
@@ -234,7 +251,7 @@ describe("ES6 class strict test cases", () => {
             try {
                 mockedTestInterface.method1NumberArgNumberReturn(NUMBER_CALL_PARAM_1);
             } catch (e) {
-                assert.regexMatches(e.message, /method1NumberArgNumberReturn\(10\) was called but no expectation matched.\nExpectations:\n\tmethod1NumberArgNumberReturn\(\) with any arguments. Expected between 0 and 3 invocations, so far 3.\n\tExpectation set at .*?StrictEs6Class.test.ts:227:13/);
+                assert.regexMatches(e.message, new RegExp(`method1NumberArgNumberReturn\\(10\\) was called but no expectation matched.\nExpectations:\n\tmethod1NumberArgNumberReturn\\(\\) with any arguments. Expected between 0 and 3 invocations, so far 3.\n\tExpectation set at .*?${fileName}:${lineNumber}:13`));
                 didThrow = true;
             }
 
@@ -245,19 +262,54 @@ describe("ES6 class strict test cases", () => {
             const testClass: TestClass = mock();
             const arg1: TestClass = mock();
 
-            expect(testClass.method1AnyArgNumberReturn).withArgs(arg1);
+            expect(testClass.method1AnyArgNumberReturn).withArgs(arg1); const lineNumber = getLineNumber();
 
             let didThrow = false;
             try {
                 testClass.method1AnyArgNumberReturn(null);
             } catch (e) {
-                assert.regexMatches(e.message, /method1AnyArgNumberReturn\(null\) was called but no expectation matched.\nExpectations:\n\tmethod1AnyArgNumberReturn\(mock\). Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictEs6Class.test.ts:248:13/)
+                assert.regexMatches(e.message, new RegExp(`method1AnyArgNumberReturn\\(null\\) was called but no expectation matched.\nExpectations:\n\tmethod1AnyArgNumberReturn\\(mock\\). Expected 1 invocations, so far 0.\n\tExpectation set at .*?${fileName}:${lineNumber}:13`));
                 didThrow = true;
             }
 
             assert.equal(true, didThrow);
             reset(testClass, arg1);
         });
+
+        it("should handle partial mock expectation not being called", () => {
+            const mockedTestInterface = partialMock(new TestClass());
+
+            expect(mockedTestInterface.method1StringArgNumberReturn).andReturn(MOCK_RETURN_VALUE); const lineNumber = getLineNumber();
+            let didThrow = false;
+            try {
+                verify(mockedTestInterface);
+            } catch (e) {
+                assert.regexMatches(e.message, new RegExp(`Expected 1 invocations, got 0.\nExpected at: .*?${fileName}:${lineNumber}:13`));
+                didThrow = true;
+            }
+
+            assert.equal(true, didThrow);
+            reset(mockedTestInterface);
+        });
+
+        it("should handle partial mock missing method", () => {
+            const mockedTestInterface: any = partialMock(new TestClass());
+
+            let didThrow = false;
+            try {
+                expect(mockedTestInterface.invalidMethod).andCallRealMethod();
+            } catch (e) {
+                assert.regexMatches(e.message, /Property "invalidMethod" was access on class "TestClass". Ensure property exists on the prototype or existing object. Valid methods: \[testStringField, testNumberField, testBooleanField, testRegexField, testDateField\]/)
+                didThrow = true;
+            }
+
+            assert.equal(true, didThrow);
+            reset(mockedTestInterface);
+        });
+
+    });
+
+    describe("mock", () => {
 
         it("should throw if atMost is called twice", () => {
             const mockedTestInterface = mock(TestClass);
@@ -469,7 +521,7 @@ describe("ES6 class strict test cases", () => {
             try {
                 expect(realObject).once();
             } catch (e) {
-                assert.regexMatches(e.message, new RegExp(`Passed an object that was not a mock. Object: ${realObject.toString().replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&')}`));
+                assert.regexMatches(e.message, new RegExp(`Passed an object that was not a mock. Object: ${escapeRegex(realObject.toString())}`));
                 didThrow = true;
             }
 
@@ -634,7 +686,7 @@ describe("ES6 class strict test cases", () => {
             try {
                 mockedTestInterface.invalidMethod(STRING_CALL_PARAM_1);
             } catch (e) {
-                assert.equal(e.message.indexOf(`Method "invalidMethod" was called on class "TestClass". Ensure method exists on prototype. `), 0);
+                assert.equal(e.message, `Property "invalidMethod" was access on class "TestClass". Ensure property exists on the prototype or existing object. Valid methods: [method1StringArgNumberReturn, length, name]`);
                 didThrow = true;
             }
 
@@ -659,7 +711,7 @@ describe("ES6 class strict test cases", () => {
                 expect(mockedTestInterface.invalidMethod).andReturn(MOCK_RETURN_VALUE);
             } catch (e) {
                 didThrow = true;
-                assert.equal(e.message.indexOf(`Method "invalidMethod" was called on class "TestClass". Ensure method exists on prototype. `), 0);
+                assert.equal(e.message, `Property "invalidMethod" was access on class "TestClass". Ensure property exists on the prototype or existing object. Valid methods: [length, name]`);
             }
 
             assert.equal(true, didThrow);
@@ -895,6 +947,23 @@ describe("ES6 class strict test cases", () => {
                 });
         });
 
+        it("should allow setting properties on the mock class", () => {
+            const mockedClass = mock(TestClass);
+
+            mockedClass.testStringField = STRING_FIELD;
+            mockedClass.testNumberField = 50;
+            mockedClass.testBooleanField = true;
+            mockedClass.testDateField = DATE_FIELD;
+            mockedClass.testRegexField = REGEX_FIELD;
+
+            assert.equal(STRING_FIELD, mockedClass.testStringField);
+            assert.equal(50, mockedClass.testNumberField);
+            assert.equal(true, mockedClass.testBooleanField);
+            assert.equal(DATE_FIELD, mockedClass.testDateField);
+            assert.equal(REGEX_FIELD, mockedClass.testRegexField);
+
+            verify(mockedClass);
+        });
 
         it("should not have a andReturn method if mocked function has a void method", () => {
             const mockedTestInterface = mock(TestClass);
@@ -949,6 +1018,46 @@ describe("ES6 class strict test cases", () => {
 
             reset(mockedTestInterface);
         });
+
+
+        it("should allow mocking inherited classes with real class", () => {
+            const mockedClass = mock(SecondLevelTestClass);
+            expect(mockedClass.method1StringArgNumberReturn).andReturn(MOCK_RETURN_VALUE);
+
+            assert.equal(mockedClass.method1StringArgNumberReturn(STRING_CALL_PARAM_1), MOCK_RETURN_VALUE);
+
+            verify(mockedClass);
+        });
+
+        it("should allow mocking inherited classes with no reference", () => {
+            const mockedClass: SecondLevelTestClass = mock();
+            expect(mockedClass.method1StringArgNumberReturn).andReturn(MOCK_RETURN_VALUE);
+
+            assert.equal(mockedClass.method1StringArgNumberReturn(STRING_CALL_PARAM_1), MOCK_RETURN_VALUE);
+
+            verify(mockedClass);
+        });
+
+        
+        it("should allow mocking multiple inherited classes with real class", () => {
+            const mockedClass = mock(ThirdLevelTestClass);
+            expect(mockedClass.method1StringArgNumberReturn).andReturn(MOCK_RETURN_VALUE);
+
+            assert.equal(mockedClass.method1StringArgNumberReturn(STRING_CALL_PARAM_1), MOCK_RETURN_VALUE);
+
+            verify(mockedClass);
+        });
+        
+        it("should allow mocking multiple inherited classes with no reference", () => {
+            const mockedClass: ThirdLevelTestClass = mock();
+            expect(mockedClass.method1StringArgNumberReturn).andReturn(MOCK_RETURN_VALUE);
+
+            assert.equal(mockedClass.method1StringArgNumberReturn(STRING_CALL_PARAM_1), MOCK_RETURN_VALUE);
+
+            verify(mockedClass);
+        });
+
+
     });
 
     describe("partialMock", () => {
@@ -963,6 +1072,103 @@ describe("ES6 class strict test cases", () => {
             assert.equal(mockedTestInterface.method1StringArgNumberReturn("2"), MOCK_RETURN_VALUE);
 
             verify(mockedTestInterface);
+        });
+
+        it("should allow mocking objects that are not classes", () => {
+            const testObject = {
+                method: () => {
+                    console.log("testObject method");
+                    return REAL_NUMBER_RETURN_VALUE;
+                },
+
+                mockedMethod: () => {
+                    console.log("mocked method");
+                    return REAL_NUMBER_RETURN_VALUE;
+                }
+            };
+            const mockedObject = partialMock(testObject);
+
+            expect(mockedObject.method).andCallRealMethod();
+            expect(mockedObject.mockedMethod).andReturn(MOCK_RETURN_VALUE);
+
+            assert.equal(mockedObject.method(), REAL_NUMBER_RETURN_VALUE);
+            assert.equal(mockedObject.mockedMethod(), MOCK_RETURN_VALUE);
+
+            verify(mockedObject);
+        });
+
+        it("should allow mocking objects that have properties that are not functions", () => {
+            const testObject = {
+                method: () => {
+                    return REAL_NUMBER_RETURN_VALUE;
+                },
+
+                mockedMethod: () => {
+                    return REAL_NUMBER_RETURN_VALUE;
+                },
+
+                stringField: STRING_FIELD,
+                numberField: 50,
+                booleanField: true,
+                objectField: {
+                    method: () => {
+                        return REAL_NUMBER_RETURN_VALUE;
+                    },
+
+                    stringField: STRING_FIELD
+                }
+            };
+
+            const mockedObject = partialMock(testObject);
+
+            expect(mockedObject.method).andCallRealMethod();
+            expect(mockedObject.mockedMethod).andReturn(MOCK_RETURN_VALUE);
+
+            assert.equal(mockedObject.method(), REAL_NUMBER_RETURN_VALUE);
+            assert.equal(mockedObject.mockedMethod(), MOCK_RETURN_VALUE);
+            assert.equal(STRING_FIELD, mockedObject.stringField);
+            assert.equal(50, mockedObject.numberField);
+            assert.equal(true, mockedObject.booleanField);
+            assert.equal(testObject.objectField.stringField, mockedObject.objectField.stringField);
+
+            verify(mockedObject);
+        });
+
+        it("should allow mocking objects that have properties that are not functions", () => {
+            const testObject = {
+                method: () => {
+                    return REAL_NUMBER_RETURN_VALUE;
+                },
+
+                mockedMethod: () => {
+                    return REAL_NUMBER_RETURN_VALUE;
+                },
+
+                stringField: STRING_FIELD,
+                numberField: 50,
+                booleanField: true,
+                objectField: {
+                    method: () => {
+                        return REAL_NUMBER_RETURN_VALUE;
+                    },
+
+                    stringField: STRING_FIELD
+                }
+            };
+
+            const mockedObject = partialMock(testObject);
+
+            expect(mockedObject.method).andCallRealMethod();
+            expect(mockedObject.mockedMethod).andReturn(MOCK_RETURN_VALUE);
+
+            assert.equal(mockedObject.method(), REAL_NUMBER_RETURN_VALUE);
+            assert.equal(mockedObject.mockedMethod(), MOCK_RETURN_VALUE);
+            assert.equal(STRING_FIELD, mockedObject.stringField);
+            assert.equal(50, mockedObject.numberField);
+            assert.equal(true, mockedObject.booleanField);
+            assert.equal(testObject.objectField.stringField, mockedObject.objectField.stringField);
+
+            verify(mockedObject);
         });
 
         it("should allow mocking static methods", () => {
@@ -987,7 +1193,57 @@ describe("ES6 class strict test cases", () => {
             assert.equal(expected, osMock.endianness());
             assert.notEqual(expected, os.endianness());
             assert.equal(process.arch, osMock.arch());
-        })
+        });
+
+        it("should allow using constructors on partial mocks", () => {
+            const mockedStaticClass = partialMock(TestClass);
+
+            const mockedClass = new mockedStaticClass();
+
+            expect(mockedClass.method1StringArgNumberReturn).withArgs(STRING_CALL_PARAM_1).andCallRealMethod();
+            expect(mockedClass.method1StringArgNumberReturn).withArgs("2").andReturn(MOCK_RETURN_VALUE);
+
+            assert.equal(mockedClass.method1StringArgNumberReturn(STRING_CALL_PARAM_1), REAL_NUMBER_RETURN_VALUE);
+            assert.equal(mockedClass.method1StringArgNumberReturn("2"), MOCK_RETURN_VALUE);
+
+            verify(mockedClass);
+        });
+/* 
+        it("should allow mocking constructors", () => {
+            const mockedStaticClass = partialMock(TestClass);
+            const mockedInstance = mock(TestClass);
+
+            expect(mockedStaticClass).andReturn(mockedInstance);
+
+            const mockedClass = new mockedStaticClass();
+
+
+            expect(mockedClass.method1StringArgNumberReturn).withArgs(STRING_CALL_PARAM_1).andCallRealMethod();
+            expect(mockedClass.method1StringArgNumberReturn).withArgs("2").andReturn(MOCK_RETURN_VALUE);
+
+            assert.equal(mockedClass.method1StringArgNumberReturn(STRING_CALL_PARAM_1), REAL_NUMBER_RETURN_VALUE);
+            assert.equal(mockedClass.method1StringArgNumberReturn("2"), MOCK_RETURN_VALUE);
+
+            verify(mockedClass);
+        });
+ */
+
+    });
+
+    describe("staticMock", () => {
+
+        it("should allow mocking static methods", () => {
+            const mockedTestInterface = staticMock(TestClass);
+
+            expect(mockedTestInterface.staticMethod1StringArgNumberReturn).withArgs(STRING_CALL_PARAM_1).andCallRealMethod();
+            expect(mockedTestInterface.staticMethod1StringArgNumberReturn).withArgs("2").andReturn(MOCK_RETURN_VALUE);
+
+            assert.equal(mockedTestInterface.staticMethod1StringArgNumberReturn(STRING_CALL_PARAM_1), REAL_NUMBER_RETURN_VALUE);
+            assert.equal(mockedTestInterface.staticMethod1StringArgNumberReturn("2"), MOCK_RETURN_VALUE);
+
+            verify(mockedTestInterface);
+        });
+
     });
 
 });

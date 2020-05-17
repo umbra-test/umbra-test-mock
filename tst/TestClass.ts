@@ -3,6 +3,12 @@ const REAL_STRING_RETURN_VALUE = "200";
 
 class TestClass {
 
+    public testStringField: string | null = null;
+    public testNumberField: number | null = null;
+    public testBooleanField: boolean | null = null;
+    public testRegexField: RegExp | null = null;
+    public testDateField: Date | null = null;
+
     public static staticMethod1StringArgNumberReturn(arg1: string): number {
         console.log("Enter static method with one string arg");
         return REAL_NUMBER_RETURN_VALUE;
@@ -53,7 +59,28 @@ class TestClass {
 
 }
 
+class SecondLevelTestClass extends TestClass {
+
+
+    secondLevelMethodMethod1AnyArgStringReturn(arg1: any): string {
+        console.log("Enter second level method with one any arg");
+        return REAL_STRING_RETURN_VALUE;
+    }
+}
+
+
+class ThirdLevelTestClass extends TestClass {
+
+
+    thirdLevelMethodMethod1AnyArgStringReturn(arg1: any): string {
+        console.log("Enter third level method with one any arg");
+        return REAL_STRING_RETURN_VALUE;
+    }
+}
+
 export {
     TestClass,
+    SecondLevelTestClass,
+    ThirdLevelTestClass,
     REAL_NUMBER_RETURN_VALUE
 }

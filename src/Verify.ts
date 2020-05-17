@@ -27,12 +27,9 @@ function resetMock<F extends MockableFunction>(mock: any): void {
 
     const test = Object.keys(mock);
     for (const key of test) {
-        if (key === INTERNAL_MOCKER_NAME) {
-            continue;
-        }
         const value = mock[key];
         if (value) {
-            const internalFunctionMocker = GetInternalMocker(value);
+            const internalFunctionMocker = GetInternalMockerSafe(value);
             if (internalFunctionMocker) {
                 resetMock(value);
             }

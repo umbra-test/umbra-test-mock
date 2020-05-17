@@ -1,10 +1,11 @@
 import { mock, verify, expect, reset } from "..";
 import { assert } from "umbra-assert";
+import { escapeRegex, getLineNumber } from "./TestUtils";
+
+const fileName = escapeRegex("StrictInterface.test.ts");
 
 interface TestInterface {
-
     exampleMethod(): string;
-    
 }
 
 interface InterfaceFunction {
@@ -12,11 +13,9 @@ interface InterfaceFunction {
 }
 
 interface FakeEventEmitter {
-
     on(event: "close", listener: () => void): this;
     on(event: "error", listener: (error: Error) => void): this;
     on(event: string, listener: (...args: any[]) => void): this;
-
 }
 
 type TestFunction = () => string;
@@ -65,13 +64,13 @@ describe("Interface test cases", () => {
         it("supports named mock in expectation error messages", () => {
             const mockedFunction = mock<TestFunctionWithOptionalString>("mockedFunction");
 
-            expect(mockedFunction).withArgs("").andReturn(MOCK_RETURN_VAL);
+            expect(mockedFunction).withArgs("").andReturn(MOCK_RETURN_VAL); const lineNumber = getLineNumber();
 
-            let didThrow = true;
+            let didThrow = false;
             try {
                 assert.equal(MOCK_RETURN_VAL, mockedFunction());
             } catch (e) {
-                assert.regexMatches(e.message, /mockedFunction\(\) was called but no expectation matched.\nExpectations:\n\tmockedFunction\(""\). Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictInterface.test.ts:68:13/);
+                assert.regexMatches(e.message, new RegExp(`mockedFunction\\(\\) was called but no expectation matched.\nExpectations:\n\tmockedFunction\\(""\\). Expected 1 invocations, so far 0.\n\tExpectation set at .*?${fileName}:${lineNumber}:13`));
                 didThrow = true;
             }
 
@@ -82,15 +81,15 @@ describe("Interface test cases", () => {
         it("should throw if no args match with optional args", () => {
             const mockedFunction = mock<TestFunctionWithOptionalString>();
 
-            expect(mockedFunction).withArgs("arg").andReturn(MOCK_RETURN_VAL);
-            expect(mockedFunction).withArgs().andReturn(MOCK_RETURN_VAL + 1);
+            expect(mockedFunction).withArgs("arg").andReturn(MOCK_RETURN_VAL); const lineNumber = getLineNumber();
+            expect(mockedFunction).withArgs().andReturn(MOCK_RETURN_VAL + 1); const lineNumber2 = getLineNumber();
 
             let didThrow = false;
             try {
                 mockedFunction("noMatch");
             } catch (e) {
                 didThrow = true;
-                assert.regexMatches(e.message, /mock\("noMatch"\) was called but no expectation matched.\nExpectations:\n\tmock\("arg"\). Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictInterface.test.ts:85:13\n\n\tmock\(\). Expected 1 invocations, so far 0.\n\tExpectation set at .*?StrictInterface.test.ts:86:13\n/)
+                assert.regexMatches(e.message, new RegExp(`mock\\("noMatch"\\) was called but no expectation matched.\nExpectations:\n\tmock\\("arg"\\). Expected 1 invocations, so far 0.\n\tExpectation set at .*?${fileName}:${lineNumber}:13\n\n\tmock\\(\\). Expected 1 invocations, so far 0.\n\tExpectation set at .*?${fileName}:${lineNumber2}:13\n`));
             }
 
             assert.equal(true, didThrow);
@@ -100,14 +99,14 @@ describe("Interface test cases", () => {
         it("supports named mock in verify error messages", () => {
             const mockedFunction = mock<TestFunctionWithOptionalString>("mockedFunction");
 
-            expect(mockedFunction).withArgs("").andReturn(MOCK_RETURN_VAL);
+            expect(mockedFunction).withArgs("").andReturn(MOCK_RETURN_VAL); const lineNumber = getLineNumber();
 
-            let didThrow = true;
+            let didThrow = false;
             try {
                 verify(mockedFunction);
             } catch (e) {
-                assert.regexMatches(e.message, /Expected 1 invocations, got 0\.\nExpected at: .*?StrictInterface.test.ts:103:13/);
                 didThrow = true;
+                assert.regexMatches(e.message, new RegExp(`Expected 1 invocations, got 0\.\nExpected at: .*?${fileName}:${lineNumber}:13`));
             }
 
             assert.equal(true, didThrow);
@@ -127,6 +126,21 @@ describe("Interface test cases", () => {
 
             verify(mockedFunction);
         });
+
+        it("throws if expectation on mock was not called", () => {
+            const mockedFunction: TestFunction = mock();
+            
+            let didThrow = false;
+            try {
+                mockedFunction();
+            } catch (e) {
+                assert.equal("mock() was called but no expectation was set.", e.message);
+                didThrow = true;
+            }
+            
+            assert.equal(true, didThrow);
+        });
+
 
         it("should return mock value", () => {
             const mockedTestInterface = mock<TestFunction>();

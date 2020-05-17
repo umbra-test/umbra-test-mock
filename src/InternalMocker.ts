@@ -19,7 +19,8 @@ interface RecordedInvocation<F extends MockableFunction> {
 }
 
 enum MockType {
-    Full,
+    Instance,
+    Static,
     Partial
 }
 
