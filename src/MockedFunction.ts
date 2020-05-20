@@ -130,7 +130,7 @@ function buildExpectationString<F extends MockableFunction>(expectation: Expecta
 }
 
 function createMockedFunction<F extends MockableFunction>(): F {
-    const mock = (...args: Parameters<F>): ReturnType<F> | null => {
+    const mock = function(this: any, ...args: Parameters<F>): ReturnType<F> | null {
         const internalMocker = GetInternalMocker(mockedFunc);
         const currentLocation = StacktraceUtils.getCurrentMockLocation(2);
         internalMocker.recordedInvocations.push({
@@ -177,7 +177,7 @@ function createMockedFunction<F extends MockableFunction>(): F {
         }
 
         if (internalMocker.mockType === MockType.Partial) {
-            return internalMocker.realFunction(args);
+            return internalMocker.realFunction.apply(this, args);
         }
 
         if (internalMocker.options.strictMode === StrictnessMode.Strict) {

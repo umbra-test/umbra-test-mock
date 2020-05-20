@@ -1057,6 +1057,29 @@ describe("ES6 class strict test cases", () => {
             verify(mockedClass);
         });
 
+        it("should allow mocking a promise object and mocking the result", () => {
+            const mockedPromise = mock(Promise);
+            expect(mockedPromise.then).andResolve(MOCK_RETURN_VALUE);
+            return mockedPromise.then(() => {
+                return REAL_NUMBER_RETURN_VALUE;
+            }).then((actual) => {
+                assert.equal(MOCK_RETURN_VALUE, actual);
+            });
+        });
+
+        it("should allow wrapping a promise object and rejecting the real promise or mocking the error", () => {
+            const error = new Error();
+            const mockError = new Error();
+            const mockedPromise = mock(Promise);
+
+            expect(mockedPromise.catch).andResolve(mockError);
+
+            return mockedPromise.catch(() => {
+                return error;
+            }).then((actual) => {
+                assert.equal(mockError, actual);
+            });
+        });
 
     });
 
@@ -1169,6 +1192,43 @@ describe("ES6 class strict test cases", () => {
             assert.equal(testObject.objectField.stringField, mockedObject.objectField.stringField);
 
             verify(mockedObject);
+        });
+
+        it("should allow wrapping a promise object and resolving the real promise or mocking the result", () => {
+            const mockedPromise = partialMock(Promise.resolve(REAL_NUMBER_RETURN_VALUE));
+
+            return mockedPromise.then(() => {
+                return REAL_NUMBER_RETURN_VALUE;
+            }).then((actual) => {
+                assert.equal(REAL_NUMBER_RETURN_VALUE, actual);
+
+                expect(mockedPromise.then).andResolve(MOCK_RETURN_VALUE);
+                return mockedPromise.then(() => {
+                    return REAL_NUMBER_RETURN_VALUE;
+                }).then((actual) => {
+                    assert.equal(MOCK_RETURN_VALUE, actual);
+                });
+            });
+        });
+
+        it("should allow wrapping a promise object and rejecting the real promise or mocking the error", () => {
+            const error = new Error();
+            const mockError = new Error();
+            const mockedPromise = partialMock(Promise.reject(error));
+
+            return mockedPromise.catch(() => {
+                return error;
+            }).then((actual) => {
+                assert.equal(error, actual);
+
+                expect(mockedPromise.catch).andResolve(mockError);
+
+                return mockedPromise.catch(() => {
+                    return error;
+                }).then((actual) => {
+                    assert.equal(mockError, actual);
+                });
+            });
         });
 
         it("should allow mocking static methods", () => {

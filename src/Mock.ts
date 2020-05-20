@@ -41,7 +41,7 @@ class InvocationHandler<T extends object> implements ProxyHandler<T> {
     public apply(target: T, thisArg: any, argArray?: any): any {
         if (target === this.realObject) {
             this.mockSingleFunctionIfNecessary(this.realObject as any);
-            return this.cachedFunction(...argArray);
+            return this.cachedFunction.apply(thisArg, argArray);
         }
 
         (target as any)(argArray);
@@ -98,6 +98,12 @@ class InvocationHandler<T extends object> implements ProxyHandler<T> {
             return realValue;
         }
 
+        if (target instanceof Promise && p === "then") {
+            // Native promise methods must be bound back to the original Promise object.
+            // Passing the proxy will cause you to get an error: incompatible receiver object promise
+            realValue = realValue.bind(target);
+        }
+
         let newCachedField: any;
         const mockName: string = this.mockName !== null ? `${this.mockName}.${p.toString()}` : p.toString();
         switch (this.mockType) {
@@ -139,6 +145,41 @@ class InvocationHandler<T extends object> implements ProxyHandler<T> {
         return Reflect.getOwnPropertyDescriptor(target, p);
     }
 
+    /*public has(target: T, p: PropertyKey): boolean {
+        console.log("blah");
+        return Reflect.has(target, p);
+    }
+
+    public getPrototypeOf(target: T): object | null {
+        console.log("blah");
+        return Reflect.getPrototypeOf(target);
+    }
+
+    public setPrototypeOf(target: T, v: any): boolean {
+        console.log("blah");
+        return Reflect.setPrototypeOf(target, v);
+    }
+
+    public preventExtensions(target: T): boolean {
+        console.log("blah");
+        return Reflect.preventExtensions(target);
+    }
+
+    public set(target: T, p: PropertyKey, value: any, receiver: any): boolean {
+        console.log("blah");
+        return Reflect.set(target, p, value, receiver);
+    }
+
+    public deleteProperty(target: T, p: PropertyKey): boolean {
+        console.log("blah");
+        return Reflect.deleteProperty(target, p);
+    }
+
+    public defineProperty(target: T, p: PropertyKey, attributes: PropertyDescriptor): boolean {
+        console.log("blah");
+        return Reflect.defineProperty(target, p, attributes);
+    }*/
+
     private mockSingleFunctionIfNecessary<F extends MockableFunction>(realFunction: F) {
         if (!this.cachedFunction) {
             const mockedFunction: F = createMockedFunction();
@@ -168,31 +209,6 @@ class InvocationHandler<T extends object> implements ProxyHandler<T> {
         return undefined;
     }
 
-    /*
-        getPrototypeOf(target: T): object | null {
-            console.log("blah");
-        }
-        setPrototypeOf(target: T, v: any): boolean {
-            console.log("blah");
-        }
-        preventExtensions(target: T): boolean {
-            console.log("blah");
-        }
-
-        has?(target: T, p: PropertyKey): boolean {
-            console.log("blah");
-        }
-        set?(target: T, p: PropertyKey, value: any, receiver: any): boolean {
-            console.log("blah");
-        }
-        deleteProperty?(target: T, p: PropertyKey): boolean {
-            console.log("blah");
-        }
-        defineProperty?(target: T, p: PropertyKey, attributes: PropertyDescriptor): boolean {
-            console.log("blah");
-        }
-
-    */
 }
 
 let defaultOptions: MockOptions = {
