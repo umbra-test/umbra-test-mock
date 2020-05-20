@@ -8,6 +8,7 @@ class TestClass {
     public testBooleanField: boolean | null = null;
     public testRegexField: RegExp | null = null;
     public testDateField: Date | null = null;
+    private getterSetterProperty: string = "";
 
     public static staticMethod1StringArgNumberReturn(arg1: string): number {
         console.log("Enter static method with one string arg");
@@ -57,6 +58,16 @@ class TestClass {
         console.log("Enter method with one any arg, void return");
     }
 
+    public set setterValue(value : string) {
+        console.log("Setter value");
+        this.getterSetterProperty = value;
+    }
+
+    public get getterValue(): string {
+        console.log("Getter value");
+        return this.getterSetterProperty;
+    }
+    
 }
 
 class SecondLevelTestClass extends TestClass {

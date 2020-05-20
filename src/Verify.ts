@@ -53,15 +53,7 @@ function verifyMock<F extends MockableFunction>(mock: any): void {
 
     const test = Reflect.ownKeys(mock);
     for (const key of test) {
-        if (key === INTERNAL_MOCKER_NAME) {
-            continue;
-        }
-        const propertyDescriptor = Object.getOwnPropertyDescriptor(mock, key);
-        if (propertyDescriptor === undefined || propertyDescriptor.value === undefined) {
-            continue;
-        }
-
-        const value = propertyDescriptor.value;
+        const value = Reflect.get(mock, key);
         if (value) {
             const internalFunctionMocker = GetInternalMockerSafe(value);
             if (internalFunctionMocker) {

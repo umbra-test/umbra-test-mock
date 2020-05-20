@@ -41,7 +41,7 @@ describe("Capture test cases", () => {
             
             expect(mockedFunction).withArgs(capture);
 
-            const value = { first: 0, last: 1, all: [] };
+            const value = { first: 0, last: 1, all: [0, 1] };
             mockedFunction(value);
 
             verify(mockedFunction);

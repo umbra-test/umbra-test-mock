@@ -32,5 +32,6 @@ interface InternalMocker<F extends MockableFunction> {
 }
 declare function GetInternalMockerSafe<F extends MockableFunction>(mock: F): InternalMocker<F> | null;
 declare function GetInternalMocker<F extends MockableFunction>(mock: F): InternalMocker<F>;
+declare function createInvalidMockError(object: any): Error;
 declare function CreateInternalMocker<F extends MockableFunction>(mockedFunction: F, realFunction: F, mockName: string | null, options: MockOptions, mockType: MockType): InternalMocker<F>;
-export { CreateInternalMocker, ExpectationData, GetInternalMocker, GetInternalMockerSafe, InternalMocker, INTERNAL_MOCKER_NAME, RecordedInvocation, MockType };
+export { CreateInternalMocker, ExpectationData, GetInternalMocker, GetInternalMockerSafe, createInvalidMockError, InternalMocker, INTERNAL_MOCKER_NAME, RecordedInvocation, MockType };

@@ -1,8 +1,9 @@
-import { CreateInternalMocker, ExpectationData, INTERNAL_MOCKER_NAME, MockType } from "./InternalMocker";
+import { CreateInternalMocker, ExpectationData, INTERNAL_MOCKER_NAME, MockType, GetInternalMockerSafe } from "./InternalMocker";
 import { createMockedFunction } from "./MockedFunction";
-import { BaseOngoingStubbing, OngoingStubbing, OnGoingStubs } from "./OnGoingStubs";
+import { BaseOngoingStubbing, OngoingStubbing, OnGoingStubs, ReturnableOnGoingStubbing } from "./OnGoingStubs";
 import { createdMocks } from "./UmbraTestRunnerIntegration";
 
+type ClassConstructor<T> = (new (...args: any[]) => T) | (new () => T);
 type Answer<F extends MockableFunction> = (...args: Parameters<F>) => ReturnType<F>;
 type MockableFunction = (...args: any[]) => any;
 
@@ -18,90 +19,66 @@ interface MockOptions {
     inOrder: boolean;
 }
 
-type ClassConstructor<T> = (new (...args: any[]) => T) | (new () => T);
 
 class InvocationHandler<T extends object> implements ProxyHandler<T> {
 
-    private readonly cachedFields: any = {};
     private readonly classPrototype: any | null | undefined;
     private readonly realObject: T;
     private readonly mockName: string | null;
     private readonly options: MockOptions;
     private readonly mockType: MockType;
-    private cachedFunction: any | null = null;
+    private readonly internalMocker: any;
 
-    constructor(clazz: any | null | undefined, realObject: T, mockName: string | null, options: MockOptions, mockType: MockType) {
+    constructor(clazz: any | null | undefined, mockedFunction: any, realObject: T, mockName: string | null, options: MockOptions, mockType: MockType) {
         this.classPrototype = clazz;
         this.realObject = realObject;
         this.mockName = mockName;
         this.options = options;
         this.mockType = mockType;
+
+        if (this.mockName !== null) {
+            Reflect.defineProperty(realObject, "name", { value: this.mockName });
+        }
+        this.internalMocker = CreateInternalMocker<any>(mockedFunction, realObject, this.mockName, this.options, this.mockType);
     }
 
     public apply(target: T, thisArg: any, argArray?: any): any {
-        if (target === this.realObject) {
-            this.mockSingleFunctionIfNecessary(this.realObject as any);
-            return this.cachedFunction.apply(thisArg, argArray);
-        }
-
-        (target as any)(argArray);
+        return (target as any).apply(thisArg, argArray);
     }
 
     public construct(target: T, argArray: any, newTarget?: any): object {
         if (this.mockType === MockType.Partial) {
-            return partialMock(new (target as any)(...argArray));
+            return partialMock(new (this.realObject as any)(...argArray));
         }
 
         return {};
     }
 
-    public get<F extends MockableFunction>(target: T, p: PropertyKey, receiver: any): any {
-        if (p === "prototype") {
-            return Reflect.get(this.realObject, p);
+    public get(target: T, p: PropertyKey, receiver: any): any {
+        if (p === INTERNAL_MOCKER_NAME) {
+            return this.internalMocker;
         }
 
-        if (p === INTERNAL_MOCKER_NAME || Object.getPrototypeOf(Function)[p] !== undefined) {
-            // this will happen if we're mocking a single function
-            this.mockSingleFunctionIfNecessary<F>(this.realObject as any);
-
-            return this.cachedFunction[p];
-        }
-
-        const cachedField: any = this.cachedFields[p];
-        if (cachedField !== null && cachedField !== undefined) {
-            return cachedField;
-        }
-
-        let realValue: any = null;
-        if (this.classPrototype || this.realObject) {
-            const realValueDescriptor = this.getPropertyDescriptor(this.classPrototype, p) ?? this.getPropertyDescriptor(this.realObject, p);
-            if (realValueDescriptor === undefined) {
-                if ((this.classPrototype && (this.mockType === MockType.Instance || this.mockType === MockType.Partial)) ||
-                    (this.realObject && this.mockType === MockType.Static || this.mockType === MockType.Partial))
-                {
-                    const validMethods = this.ownKeys(target).join(", ");
-                    throw new Error(`Property "${p.toString()}" was access on class "${this.classPrototype.constructor.name}". ` +
-                        `Ensure property exists on the prototype or existing object. Valid methods: [${validMethods}]`);
-                }
-            } else {
-                realValue = realValueDescriptor.value;
-                if (realValue === null || realValue === undefined) {
-                    return realValue;
-                }
+        let realValue: any = Reflect.get(this.realObject, p, receiver);
+        if (realValue !== undefined) {
+            if (typeof realValue !== "function" || this.mockType !== MockType.Partial || GetInternalMockerSafe(realValue) !== null) {
+                return realValue;
             }
         }
 
-        const realValueType = typeof realValue;
-        if (realValueType === "number" || realValueType === "string" || realValueType === "boolean" || realValue instanceof Date ||
-                realValue instanceof RegExp || Array.isArray(realValue))
-        {
-            return realValue;
+        if (this.classPrototype && realValue === undefined) {
+            const propertyDescriptor = this.getPropertyDescriptor(this.classPrototype, p);
+            if (propertyDescriptor !== undefined) {
+                realValue = propertyDescriptor.value;
+            } else if (this.mockType === MockType.Instance) {
+                return undefined;
+            }
         }
 
-        if (target instanceof Promise && p === "then") {
+        if (this.realObject instanceof Promise && p === "then") {
             // Native promise methods must be bound back to the original Promise object.
             // Passing the proxy will cause you to get an error: incompatible receiver object promise
-            realValue = realValue.bind(target);
+            realValue = realValue.bind(this.realObject);
         }
 
         let newCachedField: any;
@@ -112,37 +89,57 @@ class InvocationHandler<T extends object> implements ProxyHandler<T> {
                 break;
             case MockType.Static:
             case MockType.Partial:
+                if (!realValue) {
+                    return realValue;
+                }
                 newCachedField = partialMock(realValue);
                 break;
             default:
                 throw new Error("Unknown mock type " + MockType[this.mockType]);
         }
 
-        this.cachedFields[p] = newCachedField;
+        Reflect.set(this.realObject, p, newCachedField);
         return newCachedField;
     }
 
+    public deleteProperty(target: T, p: PropertyKey): boolean {
+        return Reflect.deleteProperty(this.realObject, p);
+    }
+
+    public set(target: T, p: PropertyKey, value: any, receiver: any): boolean {
+        return Reflect.set(this.realObject, p, value, receiver);
+    }
+
     public ownKeys(target: T): PropertyKey[] {
-        const normalTargetKeys = Reflect.ownKeys(target);
-        const cachedPrototypeKeys = Reflect.ownKeys(this.cachedFields);
+        let normalTargetKeys = Reflect.ownKeys(target);
+        if (this.mockType === MockType.Static) {
+            normalTargetKeys = normalTargetKeys.concat(Reflect.ownKeys(this.classPrototype));
+        }
+        const resultKeys = Reflect.ownKeys(this.realObject);
+        const internalMockIndex = resultKeys.indexOf(INTERNAL_MOCKER_NAME);
+        if (internalMockIndex !== -1) {
+            resultKeys.splice(internalMockIndex, 1);
+        }
         for (const key of normalTargetKeys) {
             if (key === INTERNAL_MOCKER_NAME) {
                 continue;
             }
 
-            if (cachedPrototypeKeys.indexOf(key) === -1) {
-                cachedPrototypeKeys.push(key);
+            if (resultKeys.indexOf(key) === -1) {
+                resultKeys.push(key);
             }
         }
-        return cachedPrototypeKeys;
+
+        return resultKeys;
     }
 
     public getOwnPropertyDescriptor(target: T, p: PropertyKey): PropertyDescriptor | undefined {
-        if (this.cachedFields[p]) {
-            return Object.getOwnPropertyDescriptor(this.cachedFields, p);
+        const descriptor = Reflect.getOwnPropertyDescriptor(target, p);
+        if (descriptor !== undefined) {
+            return descriptor;
         }
 
-        return Reflect.getOwnPropertyDescriptor(target, p);
+        return Reflect.getOwnPropertyDescriptor(this.realObject, p);
     }
 
     /*public has(target: T, p: PropertyKey): boolean {
@@ -165,31 +162,10 @@ class InvocationHandler<T extends object> implements ProxyHandler<T> {
         return Reflect.preventExtensions(target);
     }
 
-    public set(target: T, p: PropertyKey, value: any, receiver: any): boolean {
-        console.log("blah");
-        return Reflect.set(target, p, value, receiver);
-    }
-
-    public deleteProperty(target: T, p: PropertyKey): boolean {
-        console.log("blah");
-        return Reflect.deleteProperty(target, p);
-    }
-
     public defineProperty(target: T, p: PropertyKey, attributes: PropertyDescriptor): boolean {
         console.log("blah");
         return Reflect.defineProperty(target, p, attributes);
     }*/
-
-    private mockSingleFunctionIfNecessary<F extends MockableFunction>(realFunction: F) {
-        if (!this.cachedFunction) {
-            const mockedFunction: F = createMockedFunction();
-            if (this.mockName !== null) {
-                Reflect.defineProperty(mockedFunction, "name", { value: this.mockName });
-            }
-            CreateInternalMocker<F>(mockedFunction, realFunction, this.mockName, this.options, this.mockType);
-            this.cachedFunction = mockedFunction;
-        }
-    }
 
     private getPropertyDescriptor(object: any, propertyKey: PropertyKey): PropertyDescriptor | undefined {
         if (!object) {
@@ -208,7 +184,6 @@ class InvocationHandler<T extends object> implements ProxyHandler<T> {
 
         return undefined;
     }
-
 }
 
 let defaultOptions: MockOptions = {
@@ -223,9 +198,9 @@ function setDefaultOptions(options: Partial<MockOptions>) {
 function mock<T>(object?: ClassConstructor<T>, mockName?: string): T;
 function mock<T extends object>(mockName: string): T;
 function mock<T extends object>(clazz?: ClassConstructor<T> | string, mockName?: string | null, options: MockOptions = defaultOptions): T {
-    // Passing a stub function here allows us to pass functions as well as objects to the proxy. This is because the
+    // Passing a function here allows us to pass functions as well as objects to the proxy. This is because the
     // function is both an object and marked as [[Callable]]
-    const stubFunction = (() => { /* intentionally blank */ }) as T;
+    const stubFunction = createMockedFunction() as T;
     if (typeof clazz === "string") {
         mockName = clazz;
         clazz = undefined;
@@ -234,7 +209,8 @@ function mock<T extends object>(clazz?: ClassConstructor<T> | string, mockName?:
         mockName = null;
     }
 
-    const proxy = new Proxy<T>(stubFunction, new InvocationHandler<T>(clazz ? clazz.prototype : null, stubFunction, mockName, options, MockType.Instance));
+    const proxy = new Proxy<T>(stubFunction,
+        new InvocationHandler<T>(clazz ? clazz.prototype : null, stubFunction, stubFunction, mockName, options, MockType.Instance));
     if (createdMocks) {
         createdMocks.push(proxy);
     }
@@ -242,16 +218,24 @@ function mock<T extends object>(clazz?: ClassConstructor<T> | string, mockName?:
 }
 
 function staticMock<T extends object>(clazz?: T): T {
-    const stubFunction = (() => { /* intentionally blank */ }) as T;
-    return new Proxy(stubFunction, new InvocationHandler(clazz, stubFunction, null, defaultOptions, MockType.Static));
+    const stubFunction = createMockedFunction() as T;
+    return new Proxy(stubFunction, new InvocationHandler(clazz, stubFunction, stubFunction, null, defaultOptions, MockType.Static));
 }
 
 function partialMock<T extends object>(realObject: T, mockName: string | null = null, options: MockOptions = defaultOptions): T {
-    return new Proxy(realObject, new InvocationHandler<T>(Object.getPrototypeOf(realObject), realObject, mockName, options, MockType.Partial));
+    // In the case of a partial mock, we have a real object, so we can know if the target object behaves like a function. This is important because if we pass
+    // a function to the proxy, it must match certain requirements of the original target. For example, Reflect.ownKeys(function() {}) must return a
+    // "prototype" key, which will not exist on Reflect.ownKeys({})
+    const stubFunction = (typeof realObject === "function" ? createMockedFunction() : {}) as T;
+    return new Proxy(stubFunction, new InvocationHandler<T>(Object.getPrototypeOf(realObject), stubFunction, realObject, mockName, options, MockType.Partial));
 }
 
-function expect<F extends MockableFunction>(mockedFunction: F): OngoingStubbing<F> {
-    return new OnGoingStubs(mockedFunction) as any as OngoingStubbing<F>;
+function expect<F extends MockableFunction>(mockedFunction: F): OngoingStubbing<F>;
+function expect<C extends object, F extends MockableFunction>(mockedFunction: ClassConstructor<C>):
+    ReturnableOnGoingStubbing<F, ReturnableOnGoingStubbing<F, any>>;
+function expect<F extends any>(data: F): OngoingStubbing<any>;
+function expect<F extends MockableFunction>(mockedFunction: any): OngoingStubbing<F> {
+    return new OnGoingStubs(mockedFunction) as any;
 }
 
 interface InOrderExpectation {

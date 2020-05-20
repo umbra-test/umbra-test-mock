@@ -102,7 +102,9 @@ describe("TaskRunner", () => {
         it("will run tasks again if run twice", () => {
             const root = addTask("root");
             expect(root).twice();
-            return taskRunner.run("root").then(() => taskRunner.run("root")).then(() => verify(root));
+            return taskRunner.run("root").then(() => {
+                return taskRunner.run("root")
+            }).then(() => verify(root));
         });
 
         it("executes each duplicate child only once", () => {

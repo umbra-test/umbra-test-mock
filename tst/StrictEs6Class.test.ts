@@ -4,6 +4,7 @@ import { TestClass, REAL_NUMBER_RETURN_VALUE, SecondLevelTestClass, ThirdLevelTe
 import { escapeRegex, getLineNumber } from "./TestUtils";
 import * as os from "os";
 import * as process from "process";
+import "umbra-test";
 
 const MOCK_RETURN_VALUE = 100;
 const NUMBER_CALL_PARAM_1 = 10;
@@ -14,6 +15,7 @@ const REGEX_FIELD = /.*/;
 const fileName = escapeRegex("StrictEs6Class.test.ts");
 
 describe("ES6 class strict test cases", () => {
+
     describe("Error messages", () => {
 
         it("should throw if the expectation already matched its count", () => {
@@ -299,7 +301,7 @@ describe("ES6 class strict test cases", () => {
             try {
                 expect(mockedTestInterface.invalidMethod).andCallRealMethod();
             } catch (e) {
-                assert.regexMatches(e.message, /Property "invalidMethod" was access on class "TestClass". Ensure property exists on the prototype or existing object. Valid methods: \[testStringField, testNumberField, testBooleanField, testRegexField, testDateField\]/)
+                assert.equal("Passed an object that was not a mock. Object provided: undefined", e.message);
                 didThrow = true;
             }
 
@@ -521,7 +523,7 @@ describe("ES6 class strict test cases", () => {
             try {
                 expect(realObject).once();
             } catch (e) {
-                assert.regexMatches(e.message, new RegExp(`Passed an object that was not a mock. Object: ${escapeRegex(realObject.toString())}`));
+                assert.equal(`Passed an object that was not a mock. Object provided: ${realObject.toString()}`, e.message);
                 didThrow = true;
             }
 
@@ -686,7 +688,7 @@ describe("ES6 class strict test cases", () => {
             try {
                 mockedTestInterface.invalidMethod(STRING_CALL_PARAM_1);
             } catch (e) {
-                assert.equal(e.message, `Property "invalidMethod" was access on class "TestClass". Ensure property exists on the prototype or existing object. Valid methods: [method1StringArgNumberReturn, length, name]`);
+                assert.equal(e.message, `mockedTestInterface.invalidMethod is not a function`);
                 didThrow = true;
             }
 
@@ -703,15 +705,15 @@ describe("ES6 class strict test cases", () => {
         });
 
         it("should throw when invalid method expection is set", () => {
-            const mockedTestInterface: any = mock(TestClass);
-
+            const mockedTestInterface = mock(TestClass);
 
             let didThrow = false;
             try {
+                // @ts-expect-error
                 expect(mockedTestInterface.invalidMethod).andReturn(MOCK_RETURN_VALUE);
             } catch (e) {
                 didThrow = true;
-                assert.equal(e.message, `Property "invalidMethod" was access on class "TestClass". Ensure property exists on the prototype or existing object. Valid methods: [length, name]`);
+                assert.equal(e.message, `Passed an object that was not a mock. Object provided: undefined`);
             }
 
             assert.equal(true, didThrow);
@@ -744,8 +746,7 @@ describe("ES6 class strict test cases", () => {
 
             expect(mockedTestInterface.method2StringArgNumberReturn).once(),
 
-                mockedTestInterface.method2StringArgNumberReturn(STRING_CALL_PARAM_1, STRING_CALL_PARAM_1);
-
+            mockedTestInterface.method2StringArgNumberReturn(STRING_CALL_PARAM_1, STRING_CALL_PARAM_1);
             mockedTestInterface.method1NumberArgNumberReturn(NUMBER_CALL_PARAM_1);
             mockedTestInterface.method1StringArgNumberReturn(STRING_CALL_PARAM_1);
 
@@ -995,8 +996,9 @@ describe("ES6 class strict test cases", () => {
         it("should not have a andStubResolve method if mocked function does not return a promise method", () => {
             const mockedTestInterface = mock(TestClass);
 
+            const test = mockedTestInterface.method1AnyArgNumberReturn;
             // @ts-expect-error 
-            expect(mockedTestInterface.method1AnyArgNumberReturn).andStubResolve;
+            expect(test).andStubResolve;
 
             reset(mockedTestInterface);
         });
@@ -1037,7 +1039,6 @@ describe("ES6 class strict test cases", () => {
 
             verify(mockedClass);
         });
-
         
         it("should allow mocking multiple inherited classes with real class", () => {
             const mockedClass = mock(ThirdLevelTestClass);
@@ -1081,11 +1082,26 @@ describe("ES6 class strict test cases", () => {
             });
         });
 
+        it("should throw if verify is passed a non mock", () => {
+            const error = new Error();
+            
+            let didThrow = false;
+            try {
+                verify(error);
+            } catch (e) {
+                didThrow = true;
+                assert.equal("Passed an object that was not a mock. Object provided: new Error()", e.message);
+            }
+
+            assert.equal(true, didThrow);
+        });
+
     });
 
     describe("partialMock", () => {
 
         it("should call through to the real method if specified", () => {
+            const test = new TestClass();
             const mockedTestInterface = partialMock(new TestClass());
 
             expect(mockedTestInterface.method1StringArgNumberReturn).withArgs(STRING_CALL_PARAM_1).andCallRealMethod();
@@ -1255,7 +1271,7 @@ describe("ES6 class strict test cases", () => {
             assert.equal(process.arch, osMock.arch());
         });
 
-        it("should allow using constructors on partial mocks", () => {
+        it("should allow using constructors on partial static mocks", () => {
             const mockedStaticClass = partialMock(TestClass);
 
             const mockedClass = new mockedStaticClass();
@@ -1268,15 +1284,16 @@ describe("ES6 class strict test cases", () => {
 
             verify(mockedClass);
         });
-/* 
-        it("should allow mocking constructors", () => {
+   
+        /* it("should allow mocking constructors", () => {
             const mockedStaticClass = partialMock(TestClass);
             const mockedInstance = mock(TestClass);
 
-            expect(mockedStaticClass).andReturn(mockedInstance);
+            expect(mockedStaticClass.constructor).andReturn(mockedInstance);
 
             const mockedClass = new mockedStaticClass();
 
+            assert.strictEqual(mockedClass, mockedInstance);
 
             expect(mockedClass.method1StringArgNumberReturn).withArgs(STRING_CALL_PARAM_1).andCallRealMethod();
             expect(mockedClass.method1StringArgNumberReturn).withArgs("2").andReturn(MOCK_RETURN_VALUE);
@@ -1285,23 +1302,44 @@ describe("ES6 class strict test cases", () => {
             assert.equal(mockedClass.method1StringArgNumberReturn("2"), MOCK_RETURN_VALUE);
 
             verify(mockedClass);
+        }); */
+
+        it("should match the original keys", () => {
+            const partialMockClass = partialMock(new TestClass());
+            const realInstance = new TestClass();
+
+            assert.equal(Object.keys(realInstance), Object.keys(partialMockClass));
+            assert.containsAll(Reflect.ownKeys(realInstance), Reflect.ownKeys(partialMockClass));
+            assert.containsAll(Reflect.ownKeys(partialMockClass), Reflect.ownKeys(realInstance));
+
+            verify(partialMockClass);
         });
- */
 
     });
 
     describe("staticMock", () => {
 
         it("should allow mocking static methods", () => {
-            const mockedTestInterface = staticMock(TestClass);
+            const mockedStaticClass = staticMock(TestClass);
 
-            expect(mockedTestInterface.staticMethod1StringArgNumberReturn).withArgs(STRING_CALL_PARAM_1).andCallRealMethod();
-            expect(mockedTestInterface.staticMethod1StringArgNumberReturn).withArgs("2").andReturn(MOCK_RETURN_VALUE);
+            expect(mockedStaticClass.staticMethod1StringArgNumberReturn).withArgs(STRING_CALL_PARAM_1).andCallRealMethod();
+            expect(mockedStaticClass.staticMethod1StringArgNumberReturn).withArgs("2").andReturn(MOCK_RETURN_VALUE);
 
-            assert.equal(mockedTestInterface.staticMethod1StringArgNumberReturn(STRING_CALL_PARAM_1), REAL_NUMBER_RETURN_VALUE);
-            assert.equal(mockedTestInterface.staticMethod1StringArgNumberReturn("2"), MOCK_RETURN_VALUE);
+            assert.equal(mockedStaticClass.staticMethod1StringArgNumberReturn(STRING_CALL_PARAM_1), REAL_NUMBER_RETURN_VALUE);
+            assert.equal(mockedStaticClass.staticMethod1StringArgNumberReturn("2"), MOCK_RETURN_VALUE);
 
-            verify(mockedTestInterface);
+            verify(mockedStaticClass);
+        });
+
+        it("should match the original keys", () => {
+            const mockedStaticClass = staticMock(TestClass);
+            const realInstance = TestClass;
+
+            assert.equal(Object.keys(realInstance), Object.keys(mockedStaticClass));
+            assert.containsAll(Reflect.ownKeys(realInstance), Reflect.ownKeys(mockedStaticClass));
+            assert.containsAll(Reflect.ownKeys(mockedStaticClass), Reflect.ownKeys(realInstance));
+
+            verify(mockedStaticClass);
         });
 
     });

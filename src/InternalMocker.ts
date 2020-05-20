@@ -1,4 +1,4 @@
-import { INTERNAL_MOCKER_NAME } from "@umbra-test/umbra-util";
+import { INTERNAL_MOCKER_NAME, printObject } from "@umbra-test/umbra-util";
 import { Answer, InOrderExpectation, MockableFunction, MockOptions } from "./Mock";
 import { ArgumentMatcher } from "./MockedFunction";
 import { Range } from "./Range";
@@ -44,6 +44,10 @@ interface InternalMocker<F extends MockableFunction> {
 }
 
 function GetInternalMockerSafe<F extends MockableFunction>(mock: F): InternalMocker<F> | null {
+    if (mock === null || mock === undefined) {
+        return null;
+    }
+
     const internalMocker: InternalMocker<F> = (mock as any)[INTERNAL_MOCKER_NAME];
     return internalMocker ?? null;
 }
@@ -51,10 +55,14 @@ function GetInternalMockerSafe<F extends MockableFunction>(mock: F): InternalMoc
 function GetInternalMocker<F extends MockableFunction>(mock: F): InternalMocker<F> {
     const internalMocker = GetInternalMockerSafe(mock);
     if (internalMocker === null) {
-        throw new Error(`Passed an object that was not a mock. Object: ${mock.toString()}`);
+        throw createInvalidMockError(mock);
     }
 
     return internalMocker;
+}
+
+function createInvalidMockError(object: any) {
+    return new Error(`Passed an object that was not a mock. Object provided: ${printObject(object)}`);
 }
 
 function CreateInternalMocker<F extends MockableFunction>(mockedFunction: F,
@@ -83,6 +91,7 @@ export {
     ExpectationData,
     GetInternalMocker,
     GetInternalMockerSafe,
+    createInvalidMockError,
     InternalMocker,
     INTERNAL_MOCKER_NAME,
     RecordedInvocation,

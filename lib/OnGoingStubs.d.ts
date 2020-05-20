@@ -3,7 +3,7 @@ import { Expect } from "umbra-assert";
 import { ExpectationData, InternalMocker } from "./InternalMocker";
 import { Answer, MockableFunction } from "./Mock";
 declare type UnwrapPromise<T extends Promise<any>> = T extends Promise<infer P> ? P : never;
-declare type OngoingStubbing<T extends MockableFunction> = T extends (...args: any) => infer R ? (R extends Promise<any> ? PromiseOnGoingStubbing<T, PromiseOnGoingStubbing<T, any>> : R extends void ? BaseOngoingStubbing<T, BaseOngoingStubbing<T, any>> : ReturnableOnGoingStubbing<T, ReturnableOnGoingStubbing<T, any>>) : PromiseOnGoingStubbing<T, PromiseOnGoingStubbing<T, any>>;
+declare type OngoingStubbing<T> = T extends never ? never : T extends (...args: any) => infer R ? (R extends Promise<any> ? PromiseOnGoingStubbing<T, PromiseOnGoingStubbing<T, any>> : R extends void ? BaseOngoingStubbing<T, BaseOngoingStubbing<T, any>> : ReturnableOnGoingStubbing<T, ReturnableOnGoingStubbing<T, any>>) : PromiseOnGoingStubbing<any, PromiseOnGoingStubbing<any, any>>;
 interface PromiseOnGoingStubbing<F extends MockableFunction, G extends PromiseOnGoingStubbing<F, G>> extends ReturnableOnGoingStubbing<F, G> {
     andResolve(values: UnwrapPromise<ReturnType<F>>): G;
     andStubResolve(values: UnwrapPromise<ReturnType<F>>): void;
@@ -29,7 +29,8 @@ interface BaseOngoingStubbing<F extends MockableFunction, G extends BaseOngoingS
 }
 declare function normalizeMatcherArgs<F extends MockableFunction>(args: Parameters<F>): ArgumentValidator<any>[];
 declare class OnGoingStubs<F extends MockableFunction> extends Expect implements PromiseOnGoingStubbing<F, any> {
-    readonly internalMocker: InternalMocker<F>;
+    readonly internalMocker: InternalMocker<F> | null;
+    private readonly mockedFunction;
     private currentArgumentExpectations;
     private expectation;
     private atMostCount;
@@ -57,4 +58,4 @@ declare class OnGoingStubs<F extends MockableFunction> extends Expect implements
     private setExpectedRange;
     private doArgumentsMatch;
 }
-export { OnGoingStubs, OngoingStubbing, BaseOngoingStubbing, normalizeMatcherArgs };
+export { OnGoingStubs, OngoingStubbing, ReturnableOnGoingStubbing, BaseOngoingStubbing, normalizeMatcherArgs };
