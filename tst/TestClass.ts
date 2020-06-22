@@ -58,6 +58,10 @@ class TestClass {
         console.log("Enter method with one any arg, void return");
     }
 
+    method1AnyArgNeverReturn(arg1: any): never {
+        throw new Error();
+    }
+
     public set setterValue(value : string) {
         console.log("Setter value");
         this.getterSetterProperty = value;

@@ -9,6 +9,7 @@ import { StacktraceUtils } from "./StackTraceParser";
 type UnwrapPromise<T extends Promise<any>> = T extends Promise<infer P> ? P : never;
 
 type OngoingStubbing<T> = T extends never ? never :
+    T extends (...args: any) => never ? BaseOngoingStubbing<T, BaseOngoingStubbing<T, any>> :
     T extends (...args: any) => infer R ?
     (
         R extends Promise<any> ? PromiseOnGoingStubbing<T, PromiseOnGoingStubbing<T, any>> :

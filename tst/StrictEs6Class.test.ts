@@ -975,6 +975,16 @@ describe("ES6 class strict test cases", () => {
             reset(mockedTestInterface);
         });
 
+        it("should not have a andReturn method if function never returns", () => {
+            const mockedTestInterface = mock(TestClass);
+
+            expect(mockedTestInterface.method1AnyArgNeverReturn).withArgs;
+            // @ts-expect-error 
+            expect(mockedTestInterface.method1AnyArgVoidReturn).andReturn;
+
+            reset(mockedTestInterface);
+        });
+
         it("should not have a andStubReturn method if mocked function has a void method", () => {
             const mockedTestInterface = mock(TestClass);
 
