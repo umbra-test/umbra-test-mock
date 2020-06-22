@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "umbra-assert": "0.0.4",
-    "@umbra-test/umbra-util": "0.0.4"
+    "@umbra-test/umbra-util": "0.0.5"
   },
   "devDependencies": {
     "@types/node": "^13.13.0",
