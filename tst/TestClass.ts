@@ -62,6 +62,10 @@ class TestClass {
         throw new Error();
     }
 
+    method1AnyArgAnyReturn(arg1: any): any {
+        return null;
+    }
+
     public set setterValue(value : string) {
         console.log("Setter value");
         this.getterSetterProperty = value;

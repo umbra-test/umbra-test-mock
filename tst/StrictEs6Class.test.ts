@@ -975,6 +975,14 @@ describe("ES6 class strict test cases", () => {
             reset(mockedTestInterface);
         });
 
+        it("should have a andReturn method if mocked function has a any method", () => {
+            const mockedTestInterface = mock(TestClass);
+
+            expect(mockedTestInterface.method1AnyArgAnyReturn).andReturn;
+
+            reset(mockedTestInterface);
+        });
+
         it("should not have a andReturn method if function never returns", () => {
             const mockedTestInterface = mock(TestClass);
 

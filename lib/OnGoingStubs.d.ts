@@ -3,7 +3,7 @@ import { Expect } from "umbra-assert";
 import { ExpectationData, InternalMocker } from "./InternalMocker";
 import { Answer, MockableFunction } from "./Mock";
 declare type UnwrapPromise<T extends Promise<any>> = T extends Promise<infer P> ? P : never;
-declare type OngoingStubbing<T> = T extends never ? never : T extends (...args: any) => never ? BaseOngoingStubbing<T, BaseOngoingStubbing<T, any>> : T extends (...args: any) => infer R ? (R extends Promise<any> ? PromiseOnGoingStubbing<T, PromiseOnGoingStubbing<T, any>> : R extends void ? BaseOngoingStubbing<T, BaseOngoingStubbing<T, any>> : ReturnableOnGoingStubbing<T, ReturnableOnGoingStubbing<T, any>>) : PromiseOnGoingStubbing<any, PromiseOnGoingStubbing<any, any>>;
+declare type OngoingStubbing<T> = T extends never ? never : any extends T ? PromiseOnGoingStubbing<any, PromiseOnGoingStubbing<any, any>> : T extends (...args: any) => never ? BaseOngoingStubbing<T, BaseOngoingStubbing<T, any>> : T extends (...args: any) => infer R ? (any extends R ? PromiseOnGoingStubbing<T, PromiseOnGoingStubbing<T, any>> : R extends Promise<any> ? PromiseOnGoingStubbing<T, PromiseOnGoingStubbing<T, any>> : R extends void ? BaseOngoingStubbing<T, BaseOngoingStubbing<T, any>> : ReturnableOnGoingStubbing<T, ReturnableOnGoingStubbing<T, any>>) : PromiseOnGoingStubbing<any, PromiseOnGoingStubbing<any, any>>;
 interface PromiseOnGoingStubbing<F extends MockableFunction, G extends PromiseOnGoingStubbing<F, G>> extends ReturnableOnGoingStubbing<F, G> {
     andResolve(values: UnwrapPromise<ReturnType<F>>): G;
     andStubResolve(values: UnwrapPromise<ReturnType<F>>): void;

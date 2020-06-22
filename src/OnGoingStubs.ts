@@ -9,11 +9,20 @@ import { StacktraceUtils } from "./StackTraceParser";
 type UnwrapPromise<T extends Promise<any>> = T extends Promise<infer P> ? P : never;
 
 type OngoingStubbing<T> = T extends never ? never :
+    // Handle case where T = any
+    any extends T ? PromiseOnGoingStubbing<any, PromiseOnGoingStubbing<any, any>> :
+    // Never does not infer like you would expect (if it goes to the infer statement the entire type resolves to never).
+    // Instead check for it explicitly, which means function cannot return
     T extends (...args: any) => never ? BaseOngoingStubbing<T, BaseOngoingStubbing<T, any>> :
     T extends (...args: any) => infer R ?
     (
+        // () => any
+        any extends R ? PromiseOnGoingStubbing<T, PromiseOnGoingStubbing<T, any>> :
+        // () => Promise<any>
         R extends Promise<any> ? PromiseOnGoingStubbing<T, PromiseOnGoingStubbing<T, any>> :
-        R extends void ? BaseOngoingStubbing<T, BaseOngoingStubbing<T, any>> : ReturnableOnGoingStubbing<T, ReturnableOnGoingStubbing<T, any>>
+        // () => void
+        R extends void ? BaseOngoingStubbing<T, BaseOngoingStubbing<T, any>> :
+        ReturnableOnGoingStubbing<T, ReturnableOnGoingStubbing<T, any>>
     ) : PromiseOnGoingStubbing<any, PromiseOnGoingStubbing<any, any>>;
 
 interface PromiseOnGoingStubbing<F extends MockableFunction, G extends PromiseOnGoingStubbing<F, G>> extends ReturnableOnGoingStubbing<F, G> {

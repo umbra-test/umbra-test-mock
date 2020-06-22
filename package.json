@@ -47,7 +47,7 @@
     "nyc": "^15.0.0",
     "source-map-support": "^0.5.11",
     "tslint": "^5.14.0",
-    "typescript": "^3.9.2",
+    "typescript": "^4.0.0-dev.20200621",
     "umbra-test": "^0.0.5"
   },
   "repository": {
