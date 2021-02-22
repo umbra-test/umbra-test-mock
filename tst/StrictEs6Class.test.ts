@@ -37,6 +37,23 @@ describe("ES6 class strict test cases", () => {
             reset(mockedTestInterface);
         });
 
+        it("should throw if callRealMethod is used on a pure mock", () => {
+            const mockedInstance = mock(TestClass);
+
+            assert.strictEqual(mockedInstance, mockedInstance);
+
+            let didThrow = false;
+            try {
+                expect(mockedInstance.method1StringArgNumberReturn).withArgs(STRING_CALL_PARAM_1).andCallRealMethod();
+            } catch (e) {
+                didThrow = true;
+                assert.regexMatches(e.message, new RegExp(`Attempted to call the real method, but no real method was known. Use a partial mock with a real object passed.`));
+            }
+
+            assert.equal(didThrow, true);
+            reset(mockedInstance);
+        })
+
         it("should fail if no expectation matches and print the expectations", () => {
             const mockedTestInterface = mock(TestClass);
 
@@ -1303,7 +1320,7 @@ describe("ES6 class strict test cases", () => {
             verify(mockedClass);
         });
    
-        /* it("should allow mocking constructors", () => {
+        it("should allow mocking constructors", () => {
             const mockedStaticClass = partialMock(TestClass);
             const mockedInstance = mock(TestClass);
 
@@ -1313,14 +1330,14 @@ describe("ES6 class strict test cases", () => {
 
             assert.strictEqual(mockedClass, mockedInstance);
 
-            expect(mockedClass.method1StringArgNumberReturn).withArgs(STRING_CALL_PARAM_1).andCallRealMethod();
+            expect(mockedClass.method1StringArgNumberReturn).withArgs(STRING_CALL_PARAM_1).andReturn(MOCK_RETURN_VALUE);
             expect(mockedClass.method1StringArgNumberReturn).withArgs("2").andReturn(MOCK_RETURN_VALUE);
 
-            assert.equal(mockedClass.method1StringArgNumberReturn(STRING_CALL_PARAM_1), REAL_NUMBER_RETURN_VALUE);
+            assert.equal(mockedClass.method1StringArgNumberReturn(STRING_CALL_PARAM_1), MOCK_RETURN_VALUE);
             assert.equal(mockedClass.method1StringArgNumberReturn("2"), MOCK_RETURN_VALUE);
 
             verify(mockedClass);
-        }); */
+        });
 
         it("should match the original keys", () => {
             const partialMockClass = partialMock(new TestClass());
@@ -1340,10 +1357,10 @@ describe("ES6 class strict test cases", () => {
         it("should allow mocking static methods", () => {
             const mockedStaticClass = staticMock(TestClass);
 
-            expect(mockedStaticClass.staticMethod1StringArgNumberReturn).withArgs(STRING_CALL_PARAM_1).andCallRealMethod();
+            expect(mockedStaticClass.staticMethod1StringArgNumberReturn).withArgs(STRING_CALL_PARAM_1).andReturn(MOCK_RETURN_VALUE);
             expect(mockedStaticClass.staticMethod1StringArgNumberReturn).withArgs("2").andReturn(MOCK_RETURN_VALUE);
 
-            assert.equal(mockedStaticClass.staticMethod1StringArgNumberReturn(STRING_CALL_PARAM_1), REAL_NUMBER_RETURN_VALUE);
+            assert.equal(mockedStaticClass.staticMethod1StringArgNumberReturn(STRING_CALL_PARAM_1), MOCK_RETURN_VALUE);
             assert.equal(mockedStaticClass.staticMethod1StringArgNumberReturn("2"), MOCK_RETURN_VALUE);
 
             verify(mockedStaticClass);

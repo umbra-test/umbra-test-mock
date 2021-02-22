@@ -208,8 +208,8 @@ class OnGoingStubs<F extends MockableFunction> extends Expect implements Promise
         }
 
         const realFunction = this.internalMocker.realFunction;
-        if (!realFunction) {
-            throw new Error("No function was available. Ensure a real object was passed to the spy");
+        if (!realFunction || GetInternalMockerSafe(realFunction)) {
+            throw new Error("Attempted to call the real method, but no real method was known. Use a partial mock with a real object passed.");
         }
 
         this.expectation.answer = createCallRealMethodAnwser(realFunction);

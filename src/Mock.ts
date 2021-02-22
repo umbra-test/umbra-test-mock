@@ -28,6 +28,7 @@ class InvocationHandler<T extends object> implements ProxyHandler<T> {
     private readonly options: MockOptions;
     private readonly mockType: MockType;
     private readonly internalMocker: any;
+    private constructorMock: any;
 
     constructor(clazz: any | null | undefined, mockedFunction: any, realObject: T, mockName: string | null, options: MockOptions, mockType: MockType) {
         this.classPrototype = clazz;
@@ -48,18 +49,21 @@ class InvocationHandler<T extends object> implements ProxyHandler<T> {
 
     public construct(target: T, argArray: any, newTarget?: any): object {
         if (this.mockType === MockType.Partial) {
+            if (GetInternalMockerSafe(this.constructorMock as any) !== null) {
+                return this.constructorMock.apply(this.realObject, argArray);
+            }
             return partialMock(new (this.realObject as any)(...argArray));
         }
 
         return {};
     }
 
-    public get(target: T, p: PropertyKey, receiver: any): any {
-        if (p === INTERNAL_MOCKER_NAME) {
+    public get(target: T, property: PropertyKey, receiver: any): any {
+        if (property === INTERNAL_MOCKER_NAME) {
             return this.internalMocker;
         }
 
-        let realValue: any = Reflect.get(this.realObject, p, receiver);
+        let realValue: any = Reflect.get(this.realObject, property, receiver);
         if (realValue !== undefined) {
             if (typeof realValue !== "function" || this.mockType !== MockType.Partial || GetInternalMockerSafe(realValue) !== null) {
                 return realValue;
@@ -67,7 +71,7 @@ class InvocationHandler<T extends object> implements ProxyHandler<T> {
         }
 
         if (this.classPrototype && realValue === undefined) {
-            const propertyDescriptor = this.getPropertyDescriptor(this.classPrototype, p);
+            const propertyDescriptor = this.getPropertyDescriptor(this.classPrototype, property);
             if (propertyDescriptor !== undefined) {
                 realValue = propertyDescriptor.value;
             } else if (this.mockType === MockType.Instance) {
@@ -75,14 +79,14 @@ class InvocationHandler<T extends object> implements ProxyHandler<T> {
             }
         }
 
-        if (this.realObject instanceof Promise && p === "then") {
+        if (this.realObject instanceof Promise && property === "then") {
             // Native promise methods must be bound back to the original Promise object.
             // Passing the proxy will cause you to get an error: incompatible receiver object promise
             realValue = realValue.bind(this.realObject);
         }
 
         let newCachedField: any;
-        const mockName: string = this.mockName !== null ? `${this.mockName}.${p.toString()}` : p.toString();
+        const mockName: string = this.mockName !== null ? `${this.mockName}.${property.toString()}` : property.toString();
         switch (this.mockType) {
             case MockType.Instance:
                 newCachedField = mock(realValue, mockName);
@@ -98,7 +102,11 @@ class InvocationHandler<T extends object> implements ProxyHandler<T> {
                 throw new Error("Unknown mock type " + MockType[this.mockType]);
         }
 
-        Reflect.set(this.realObject, p, newCachedField);
+        if (property === "constructor") {
+            this.constructorMock = newCachedField;
+        } else {
+            Reflect.set(this.realObject, property, newCachedField);
+        }
         return newCachedField;
     }
 
@@ -121,7 +129,7 @@ class InvocationHandler<T extends object> implements ProxyHandler<T> {
             resultKeys.splice(internalMockIndex, 1);
         }
         for (const key of normalTargetKeys) {
-            if (key === INTERNAL_MOCKER_NAME) {
+            if (key === INTERNAL_MOCKER_NAME || key === "constructor") {
                 continue;
             }
 

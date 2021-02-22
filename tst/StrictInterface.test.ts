@@ -1,6 +1,7 @@
 import { mock, verify, expect, reset } from "..";
 import { assert } from "umbra-assert";
 import { escapeRegex, getLineNumber } from "./TestUtils";
+import "umbra-test";
 
 const fileName = escapeRegex("StrictInterface.test.ts");
 
